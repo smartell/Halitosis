@@ -1,0 +1,85 @@
+%
+%  SizeLimitz
+%
+%  Created by Martell on 2012-09-05.
+%  Copyright (c) 2012 UBC Fisheries Centre. All rights reserved.
+%
+\documentclass[12pt]{article}
+
+% Use utf-8 encoding for foreign characters
+\usepackage[utf8]{inputenc}
+
+% Setup for fullpage use
+\usepackage{fullpage}
+
+% Bibliography
+\usepackage[round]{natbib}	
+
+% Uncomment some of the following if you use the features
+%
+% Running Headers and footers
+%\usepackage{fancyhdr}
+
+% Multipart figures
+%\usepackage{subfigure}
+
+% More symbols
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{latexsym}
+
+% Surround parts of graphics with box
+\usepackage{boxedminipage}
+
+% Package for including code in the document
+\usepackage{listings}
+
+% If you want to generate a toc for each chapter (use with book)
+\usepackage{minitoc}
+
+% This is now the recommended way for checking for PDFLaTeX:
+\usepackage{ifpdf}
+
+%\newif\ifpdf
+%\ifx\pdfoutput\undefined
+%\pdffalse % we are not running PDFLaTeX
+%\else
+%\pdfoutput=1 % we are running PDFLaTeX
+%\pdftrue
+%\fi
+
+\ifpdf
+\usepackage[pdftex]{graphicx}
+\else
+\usepackage{graphicx}
+\fi
+\title{Size Limits, Post Release Mortality, and Cumulative Effects of Size Selective Fishing on Pacific Halibut}
+\author{ Steven Martell\\ IPHC }
+
+\date{2012-09-05}
+
+\begin{document}
+
+\ifpdf
+\DeclareGraphicsExtensions{.pdf, .jpg, .tif}
+\else
+\DeclareGraphicsExtensions{.eps, .jpg}
+\fi
+
+\maketitle
+
+
+\begin{abstract}
+	Harvesting fish is inherently a size-selective process where faster growing individuals recruit to the fishery at a younger age than slower growing individuals.  As a consequence of continuous fishing the size composition of each cohort may be eroded where only slower growing, smaller individuals, remain in the population.  Limiting the size range of fish that can be harvested can protect spawning biomass and allow for population renewal, if and only if, a fraction of the captured individuals that are outside the legal size range survive the harvesting process.  Release mortality (or discard mortality) is the fraction of individuals that die after capture and release.  If the release mortality rates are substantially greater than 0, limiting the legal size range could have a negative impact on potential spawning biomass if fishing mortality rates are sufficiently high.  Moreover abundant cohorts will experience above average total mortality rates at younger ages/sizes with minimum size limits in comparison to no size limits.  Cumulative effects of size-selective fishing give the appearance of declining size-at-age.  This effect is amplified with higher release mortality rates and minimum size limits that are much greater than the size-at-entry to the fishery.
+	
+\end{abstract}
+
+\input{./Introduction/Introduction.tex}
+\input{./Methods/Model.tex}
+
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{apalike}
+\bibliography{$HOME/Documents/ARTICLES/Articles-1}
+
+
+\end{document}

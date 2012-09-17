@@ -24,7 +24,7 @@ require(reshape2)
 
 # Data and other constants
 A	<- 35	# maximum age.
-G	<- 11	# number of growth groups
+G	<- 21	# number of growth groups
 S	<- 2	# number of sexes
 dim	<- c(A, G, S)
 age	<- 1:A	# vector of ages
@@ -41,6 +41,7 @@ a		<- 6.92e-6			# length-weight allometry
 b		<- 3.24				# length-weight allometry
 linf	<- c(145, 110)		# Range female 145-190, male 110-155 (cm)
 k		<- c(0.1, 0.12)		# eyeballed growth pars from Clark & Hare 2002.
+CVlinf  <- 0.1				# CV in the asymptotic length
 
 # Selectivity parameters (cm)
 lhat	<- 97.132
@@ -53,6 +54,55 @@ cvlm	<- 0.1
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
 fe		<- seq(0, 0.5, b=0.01)
+
+lifeh	<-
+function()
+{
+	# Life history and age-schedule information
+	lx	<- array(0, dim)
+	la	<- array(0, dim)
+	wa	<- array(0, dim)
+	fa	<- array(0, dim)
+	pa	<- array(0, dim)	# price per pound 
+	ma	<- plogis(age, a50, k50)
+	for(i in 1:S)
+	{
+		lx[,,i]  <- exp(-m[i])^(age-1)
+		lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
+		
+		# growth
+		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
+		dev     <- linf[i]*CVlinf
+		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
+		la[,,i] <- sapply(linf.g, vonb,k=k[i])
+		wa[,,i] <- a*la[,,i]^b
+		
+		# maturity (this assumes maturity at a fixed age)
+		fa[,,i] <- ma*wa[,,i]
+	}
+	
+	# price premiums based on fish weight
+	pa[wa<10]  <- 3.00
+	pa[wa>=10] <- 6.75
+	pa[wa>=20] <- 7.30
+	pa[wa>=40] <- 7.50
+	
+	return(list(la=la, wa=wa, fa=fa, lx=lx, pa=pa))
+}
+
+plot.AgeSchedule <- function()
+{
+	U   <- lifeh()
+	Wa  <- melt(U$wa)
+	colnames(Wa) <- c("Age","G","Sex","Weight")
+	p <- ggplot(Wa,aes(x=Age,y=Weight,col=factor(Sex)))+geom_point()
+	print(p)
+	
+}
+
+
+
+
 
 tsasm	<- 
 function(fe=0, slim=0, ulim=1000, dm=0.16)
@@ -75,7 +125,7 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 		
 		# growth
 		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
-		dev     <- linf[i]*0.3
+		dev     <- linf[i]*CVlinf
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
 		la[,,i] <- sapply(linf.g, vonb,k=k[i])
 		wa[,,i] <- a*la[,,i]^b
@@ -174,6 +224,7 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 	de		<- 0
 	ypr		<- 0
 	wbar	<- rep(0, S)
+	wdot	<- matrix(0,nrow=S, ncol=A)
 	for(i in 1:S)
 	{
 		ye  <- ye + sum( re * fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
@@ -184,8 +235,14 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 		tmp		<- t(lz[,,i]*wa[,,i])*pg
 		tmpn	<- t(lz[,,i])*pg
 		wbar[i] <- weighted.mean(wa[10,,i], tmpn[,10])
+		
+		# Average weight-at-age for each sex.
+		tmp     <- t(tmpn)
+		P       <- tmp/rowSums(tmp)
+		wdot[i,] <- rowSums(wa[,,i]*P)
 	}
 	spr		<- phi.e/phi.E
+	
 	
 	# Need to calculate landed value per recruit versus slim and fe
 	# using the price and size categories from above.
@@ -207,9 +264,11 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 	# points(be, re, pch=20, col=3)
 	return(c(fe=fe, re=re, be=be, ye=ye, 
 		de=de, spr=spr, ypr=ypr, 
-		dep=be/bo, wbar.f=wbar[1], wbar.m=wbar[2], 
+		dep=be/bo, wbar.f10=wbar[1], wbar.m10=wbar[2], 
 		landed.value=landed.value, 
-		discard.value=discard.value))
+		discard.value=discard.value ))
+		# List objects don't work here.
+		#, wdot.f=list(wdot[1,]), wdot.m=list(wdot[2,]) ))
 }
 
 .equil	<-
@@ -246,11 +305,12 @@ function(obj, ...)
 }
 
 # SCENARIOS
-S1 = data.frame(Scenario="S1", t(sapply(fe, tsasm, slim=81.3, dm=0.56)))
-S2 = data.frame(Scenario="S2", t(sapply(fe, tsasm, slim=0.00, dm=0.56)))
-S3 = data.frame(Scenario="S3", t(sapply(fe, tsasm, slim=70.0, dm=0.56)))
-S4 = data.frame(Scenario="S4", t(sapply(fe, tsasm, slim=81.3, dm=0.56, ulim=150)))
-S5 = data.frame(Scenario="S5", t(sapply(fe, tsasm, slim=70.0, dm=0.56, ulim=150)))
+lambda = 0.16
+S1 = data.frame(Scenario="S1", t(sapply(fe, tsasm, slim=81.3, dm=lambda)))
+S2 = data.frame(Scenario="S2", t(sapply(fe, tsasm, slim=0.00, dm=lambda)))
+S3 = data.frame(Scenario="S3", t(sapply(fe, tsasm, slim=70.0, dm=lambda)))
+S4 = data.frame(Scenario="S4", t(sapply(fe, tsasm, slim=81.3, dm=lambda, ulim=150)))
+S5 = data.frame(Scenario="S5", t(sapply(fe, tsasm, slim=70.0, dm=lambda, ulim=150)))
 
 DF = rbind(S1, S2, S3, S4, S5)
 
