@@ -56,7 +56,7 @@ cvlm	<- 0.1
 fe		<- seq(0, 0.5, b=0.01)
 
 lifeh	<-
-function()
+function(fe = 0)
 {
 	# Life history and age-schedule information
 	lx	<- array(0, dim)
@@ -81,22 +81,73 @@ function()
 		fa[,,i] <- ma*wa[,,i]
 	}
 	
+	# Length-based selectivity (length-based -> age-based)
+	sc	<- array(0, dim)
+	sr	<- array(0, dim)
+	sd	<- array(0, dim)
+	va	<- array(0, dim)
+	std	<- cvlm*slim+1.e-30
+	for(i in 1:S)
+	{
+		sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
+		sr[,,i]  <- plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
+		sd[,,i]  <- 1-sr[,,i]
+		va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
+	}
+	
+	# Age-specific total mortality, survival, retention, and discard rate.
+	za	<- array(0, dim)
+	sa	<- array(0, dim)
+	qa	<- array(0, dim)
+	da	<- array(0, dim)
+	for(i in 1:S)
+	{
+		za[,,i]  <- m[i] + fe*va[,,i]
+		sa[,,i]  <- exp(-za[,,i])
+		qa[,,i]  <- (sc[,,i]*sr[,,i]) * (1-sa[,,i])/za[,,i]
+		da[,,i]  <- (sc[,,i]*sd[,,i]) * (1-sa[,,i])/za[,,i]
+	}
+	# za	<- m+fe*va
+	# sa	<- exp(-za)
+	# qa	<- (sc*sr)*(1.-sa)/za	# fraction retained
+	# da	<- (sc*sd)*(1.-sa)/za	# fraction discarded
+	
+	# Survivorship under fished conditions lz(A, G, S)
+	lz	<- array(1, dim)
+	for(i in 1:S)
+	{
+		for(j in 2:A)
+		{
+			lz[j,,i] <- lz[j-1,,i]*exp(-za[j-1,,i])
+		}
+		lz[A,,i] <- lz[A,,i]/(1-exp(-za[A,,i]))
+	}
+	
+	
 	# price premiums based on fish weight
-	pa[wa<10]  <- 3.00
+	pa[wa<10]  <- 0.00
 	pa[wa>=10] <- 6.75
 	pa[wa>=20] <- 7.30
 	pa[wa>=40] <- 7.50
 	
-	return(list(la=la, wa=wa, fa=fa, lx=lx, pa=pa))
+	return(list(la=la, wa=wa, fa=fa, lz=lz, pa=pa*wa, va=va))
 }
 
 plot.AgeSchedule <- function()
 {
-	U   <- lifeh()
-	Wa  <- melt(U$wa)
-	colnames(Wa) <- c("Age","G","Sex","Weight")
-	p <- ggplot(Wa,aes(x=Age,y=Weight,col=factor(Sex)))+geom_point()
+	U   <- lifeh(0.2)
+	mU  <- melt(U)
+	colnames(mU) <- c("Age","G","Sex","value","type")
+	mU$pg  <- pg[mU$G]
+	mU$Sex[mU$Sex==1] = "Female"
+	mU$Sex[mU$Sex==2] = "Male"
+	
+	p   <- ggplot(mU)
+	p   <- p + geom_point(aes(x=Age, y=value, col=Sex, alpha=pg))
+	p   <- p + facet_wrap(~type, scale="free")
+	
 	print(p)
+	dev.copy2pdf(file="../FIGS/AgeSchedule.pdf")
 	
 }
 
