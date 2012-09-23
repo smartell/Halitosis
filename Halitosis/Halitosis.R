@@ -30,26 +30,36 @@ dim	<- c(A, G, S)
 age	<- 1:A	# vector of ages
 pg	<- dnorm(seq(-3, 3, length=G), 0, 1); pg <- pg/sum(pg)
 
-# Population parameters (female, male)
+# Population parameters 
 bo		<- 100.0			# unfished female spawning biomass
 h		<- 0.75				# steepness
-m		<- c(0.15, 0.18)	# natural mortality rate
 dm		<- 0.16				# discard mortality rate
-a50		<- 10.91			# age at 50% maturity
-k50		<- 1.406			# std at 50% maturity
-a		<- 6.92e-6			# length-weight allometry
-b		<- 3.24				# length-weight allometry
-linf	<- c(145, 110)		# Range female 145-190, male 110-155 (cm)
-k		<- c(0.1, 0.12)		# eyeballed growth pars from Clark & Hare 2002.
-CVlinf  <- 0.1				# CV in the asymptotic length
+THETA <- data.frame(bo=bo, h=h, dm=dm)
 
 # Selectivity parameters (cm)
 lhat	<- 97.132
 lhat	<- 87.132
 ghat	<- 1/0.1667
 slim	<- 81.28
-ulim	<- 150
+ulim	<- 120
 cvlm	<- 0.1
+
+
+
+
+# Sex specific parameters (female, male).
+m		<- c(0.15, 0.18)			# natural mortality rate
+a50		<- rep(10.91, 2)			# age at 50% maturity
+k50		<- rep(1.406, 2)			# std at 50% maturity
+a		<- rep(6.92e-6, 2)			# length-weight allometry
+b		<- rep(3.24, 2)				# length-weight allometry
+linf	<- c(145, 110)				# Range female 145-190, male 110-155 (cm)
+k		<- c(0.1, 0.12)				# eyeballed growth pars from Clark & Hare 2002.
+CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
+
+PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, CVlinf=CVlinf)
+rownames(PHI)=c("Female", "Male")
+
 
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
@@ -75,7 +85,7 @@ function(fe = 0)
 		dev     <- linf[i]*CVlinf
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
 		la[,,i] <- sapply(linf.g, vonb,k=k[i])
-		wa[,,i] <- a*la[,,i]^b
+		wa[,,i] <- a[i]*la[,,i]^b[i]
 		
 		# maturity (this assumes maturity at a fixed age)
 		fa[,,i] <- ma*wa[,,i]
@@ -179,7 +189,7 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 		dev     <- linf[i]*CVlinf
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
 		la[,,i] <- sapply(linf.g, vonb,k=k[i])
-		wa[,,i] <- a*la[,,i]^b
+		wa[,,i] <- a[i]*la[,,i]^b[i]
 		
 		# maturity (this assumes maturity at a fixed age)
 		fa[,,i] <- ma*wa[,,i]
