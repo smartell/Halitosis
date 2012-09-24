@@ -41,7 +41,7 @@ lhat	<- 97.132
 lhat	<- 87.132
 ghat	<- 1/0.1667
 slim	<- 81.28
-ulim	<- 120
+ulim	<- 150
 cvlm	<- 0.1
 
 
@@ -82,7 +82,7 @@ function(fe = 0)
 		
 		# growth
 		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
-		dev     <- linf[i]*CVlinf
+		dev     <- linf[i]*CVlinf[i]
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
 		la[,,i] <- sapply(linf.g, vonb,k=k[i])
 		wa[,,i] <- a[i]*la[,,i]^b[i]
@@ -186,7 +186,7 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 		
 		# growth
 		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
-		dev     <- linf[i]*CVlinf
+		dev     <- linf[i]*CVlinf[i]
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
 		la[,,i] <- sapply(linf.g, vonb,k=k[i])
 		wa[,,i] <- a[i]*la[,,i]^b[i]
@@ -367,16 +367,17 @@ function(obj, ...)
 
 # SCENARIOS
 lambda = 0.16
-S1 = data.frame(Scenario="S1", t(sapply(fe, tsasm, slim=81.3, dm=lambda)))
-S2 = data.frame(Scenario="S2", t(sapply(fe, tsasm, slim=0.00, dm=lambda)))
-S3 = data.frame(Scenario="S3", t(sapply(fe, tsasm, slim=70.0, dm=lambda)))
-S4 = data.frame(Scenario="S4", t(sapply(fe, tsasm, slim=81.3, dm=lambda, ulim=150)))
-S5 = data.frame(Scenario="S5", t(sapply(fe, tsasm, slim=70.0, dm=lambda, ulim=150)))
+S1 = data.frame(Scenario="Status quo", t(sapply(fe, tsasm, slim=81.3, dm=lambda)))
+S2 = data.frame(Scenario="No size limit", t(sapply(fe, tsasm, slim=0.00, dm=lambda)))
+S3 = data.frame(Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, slim=70.0, dm=lambda)))
+S4 = data.frame(Scenario="Slot size (81.3-150)", t(sapply(fe, tsasm, slim=81.3, dm=lambda, ulim=150)))
+S5 = data.frame(Scenario="Slot size (70.0-150)", t(sapply(fe, tsasm, slim=70.0, dm=lambda, ulim=150)))
 
 DF = rbind(S1, S2, S3, S4, S5)
 
 p<-ggplot(DF,aes(x=fe,y=de,col=Scenario)) +geom_line()
 print(p+opts(title="Wastage"))
+dev.copy2pdf(file="../FIGS/fig:wastage.pdf", width=10, height=7.5)
 
 p<-ggplot(DF,aes(x=fe,y=spr,col=Scenario)) +geom_line()
 print(p+opts(title="Relative spawning biomass per recruit"))
@@ -386,6 +387,7 @@ print(p+opts(title="Yield per recruit"))
 
 p<-ggplot(DF,aes(x=fe,y=ye,col=Scenario)) +geom_line()
 print(p+opts(title="Equilibrium yield"))
+dev.copy2pdf(file="../FIGS/fig:yield.pdf", width=10, height=7.5)
 
 p<-ggplot(DF,aes(x=fe,y=landed.value,col=Scenario)) +geom_line()
 print(p+opts(title="Landed Value"))
