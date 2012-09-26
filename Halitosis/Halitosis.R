@@ -38,12 +38,11 @@ THETA <- data.frame(bo=bo, h=h, dm=dm)
 
 # Selectivity parameters (cm)
 lhat	<- 97.132
-lhat	<- 107.132
 ghat	<- 1/0.1667
 slim	<- 81.28
 ulim	<- 150
 cvlm	<- 0.1
-
+PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm)
 
 
 
@@ -60,6 +59,7 @@ CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
 PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, CVlinf=CVlinf)
 rownames(PHI)=c("Female", "Male")
 
+T1 <- c(THETA, PHI, PI, dm=0)
 
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
@@ -348,6 +348,20 @@ function(arg="ye", dm=0.17)
 	obj	<- list(x=fe, y=sl, Z=Z)
 	class(obj) <- "isopleth"
 	return(obj)
+}
+
+GTG	<-
+function(par.df)
+{
+	# This is a wrapper for tsasm(fe, slmin, dm)
+	# where par.df is a list of parameters (THETA, PHI, PI)
+	# for the tsasm model.
+	with(as.list(par.df), {
+		dm <<- dm
+		cat("Discard mortality =", dm)
+		tmp <- tsasm(fe=0.1, slim, dm)
+		return(tmp)
+	})
 }
 
 plot.isopleth <- 
