@@ -10,9 +10,9 @@
 # SCENARIOS FOR HALIBUT PAPER
 # 1) Status quo. 83.3cm minimum size limit
 # 2) No size limits
-# 3) 60cm minimum size limit
+# 3) 70cm minimum size limit
 # 4) slot limit 81.3-150 cm
-# 5) slot limit 60-150 cm
+# 5) slot limit 70-150 cm
 # -------------------------------------------------------------------------- ##
 
 # -------------------------------------------------------------------------- ##
@@ -40,7 +40,7 @@ THETA <- data.frame(bo=bo, h=h, dm=dm)
 lhat	<- 97.132
 ghat	<- 1/0.1667
 slim	<- 81.28
-ulim	<- 150
+ulim	<- 1500
 cvlm	<- 0.1
 PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm)
 
@@ -59,11 +59,11 @@ CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
 PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, CVlinf=CVlinf)
 rownames(PHI)=c("Female", "Male")
 
-T1 <- c(THETA, PHI, PI, dm=0)
+T1 <- c(THETA, PHI, PI)
 
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
-fe		<- seq(0, 0.5, b=0.01)
+fe		<- seq(0, 0.6, b=0.01)
 
 lifeh	<-
 function(fe = 0)
@@ -166,9 +166,15 @@ plot.AgeSchedule <- function()
 
 
 tsasm	<- 
-function(fe=0, slim=0, ulim=1000, dm=0.16)
+#function(fe=0, slim=0, ulim=1000, dm=0.16)
+function(fe=0, theta)
 {
 	# A two sex age structured model. #
+	# SM Changing arguments (fe,  THETA)
+	# Where theta is a list of the global parameters used in the model.
+	
+	with(as.list(theta), {
+		
 	
 	
 	# Age-schedule information
@@ -330,6 +336,7 @@ function(fe=0, slim=0, ulim=1000, dm=0.16)
 		discard.value=discard.value ))
 		# List objects don't work here.
 		#, wdot.f=list(wdot[1,]), wdot.m=list(wdot[2,]) ))
+	})
 }
 
 .equil	<-
@@ -350,19 +357,6 @@ function(arg="ye", dm=0.17)
 	return(obj)
 }
 
-GTG	<-
-function(par.df)
-{
-	# This is a wrapper for tsasm(fe, slmin, dm)
-	# where par.df is a list of parameters (THETA, PHI, PI)
-	# for the tsasm model.
-	with(as.list(par.df), {
-		dm <<- dm
-		cat("Discard mortality =", dm)
-		tmp <- tsasm(fe=0.1, slim, dm)
-		return(tmp)
-	})
-}
 
 plot.isopleth <- 
 function(obj, ...)
@@ -380,12 +374,16 @@ function(obj, ...)
 }
 
 # SCENARIOS
-lambda = 0.16
-S1 = data.frame(Scenario="Status quo", t(sapply(fe, tsasm, slim=81.3, dm=lambda)))
-S2 = data.frame(Scenario="No size limit", t(sapply(fe, tsasm, slim=0.00, dm=lambda)))
-S3 = data.frame(Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, slim=70.0, dm=lambda)))
-S4 = data.frame(Scenario="Slot size (81.3-150)", t(sapply(fe, tsasm, slim=81.3, dm=lambda, ulim=150)))
-S5 = data.frame(Scenario="Slot size (70.0-150)", t(sapply(fe, tsasm, slim=70.0, dm=lambda, ulim=150)))
+T2 = T1; T2$slim=0.00
+T3 = T1; T3$slim=70.0
+T4 = T1; T4$ulim=150.
+T5 = T1; T5$ulim=150.; T5$slim=70.0
+
+S1 = data.frame(Scenario="Status quo", t(sapply(fe, tsasm, theta=T1)))
+S2 = data.frame(Scenario="No size limit", t(sapply(fe, tsasm, theta=T2)))
+S3 = data.frame(Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, theta=T3)))
+S4 = data.frame(Scenario="Slot size (81.3-150)", t(sapply(fe, tsasm, theta=T4)))
+S5 = data.frame(Scenario="Slot size (70.0-150)", t(sapply(fe, tsasm, theta=T5)))
 
 DF = rbind(S1, S2, S3, S4, S5)
 
