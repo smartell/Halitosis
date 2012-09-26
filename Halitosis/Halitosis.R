@@ -38,7 +38,7 @@ THETA <- data.frame(bo=bo, h=h, dm=dm)
 
 # Selectivity parameters (cm)
 lhat	<- 97.132
-lhat	<- 87.132
+lhat	<- 107.132
 ghat	<- 1/0.1667
 slim	<- 81.28
 ulim	<- 150
@@ -51,8 +51,8 @@ cvlm	<- 0.1
 m		<- c(0.15, 0.18)			# natural mortality rate
 a50		<- rep(10.91, 2)			# age at 50% maturity
 k50		<- rep(1.406, 2)			# std at 50% maturity
-a		<- rep(6.92e-6, 2)			# length-weight allometry
-b		<- rep(3.24, 2)				# length-weight allometry
+a		<- rep(6.821e-6, 2)			# length-weight allometry (Clark 1992)
+b		<- rep(3.24, 2)				# length-weight allometry (CLark 1992)
 linf	<- c(145, 110)				# Range female 145-190, male 110-155 (cm)
 k		<- c(0.1, 0.12)				# eyeballed growth pars from Clark & Hare 2002.
 CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
