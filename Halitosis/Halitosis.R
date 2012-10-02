@@ -28,11 +28,15 @@ G	<- 21	# number of growth groups
 S	<- 2	# number of sexes
 dim	<- c(A, G, S)
 age	<- 1:A	# vector of ages
+# Commercial selectivities from Hare 2012.
+bin   <- seq(50, 120, by=10)
+CSelL <- matrix(data=c(1.63180e-09,  3.25740e-09,  6.03022e-02,  3.00891e-01,  6.30344e-01,  9.13893e-01, 1.00000e+00,  1.00000e+00, 2.17159e-09,  3.96878e-03,  5.67109e-02,  2.81436e-01,  5.85461e-01,  8.35614e-01, 1.00000e+00,  1.00000e+00), nrow=8, ncol=2)
+
 pg	<- dnorm(seq(-3, 3, length=G), 0, 1); pg <- pg/sum(pg)
 
 # Population parameters 
 bo		<- 100.0			# unfished female spawning biomass
-h		<- 0.75				# steepness
+h		<- 0.85				# steepness
 dm		<- 0.16				# discard mortality rate
 THETA <- data.frame(bo=bo, h=h, dm=dm)
 
@@ -42,18 +46,21 @@ ghat	<- 1/0.1667
 slim	<- 81.28
 ulim	<- 1500
 cvlm	<- 0.1
-PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm)
+PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm, bin=bin)
 
 
 
 # Sex specific parameters (female, male).
-m		<- c(0.15, 0.18)			# natural mortality rate
+m		<- c(0.15, 0.135)			# natural mortality rate
+#0.15 0.135474
 a50		<- rep(10.91, 2)			# age at 50% maturity
 k50		<- rep(1.406, 2)			# std at 50% maturity
 a		<- rep(6.821e-6, 2)			# length-weight allometry (Clark 1992)
 b		<- rep(3.24, 2)				# length-weight allometry (CLark 1992)
-linf	<- c(145, 110)				# Range female 145-190, male 110-155 (cm)
-k		<- c(0.1, 0.12)				# eyeballed growth pars from Clark & Hare 2002.
+#linf	<- c(145, 110)				# Range female 145-190, male 110-155 (cm)
+linf    <- c(151.568,  99.3607)		# From 2011 Length_age data
+#k		<- c(0.1, 0.12)				# eyeballed growth pars from Clark & Hare 2002.
+k		<- c(0.0820581, 0.135409)   # Fron 20111 Length_age data
 CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
 
 PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, CVlinf=CVlinf)
@@ -99,7 +106,12 @@ function(fe = 0)
 	std	<- cvlm*slim+1.e-30
 	for(i in 1:S)
 	{
-		sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
+		# SM Adding approx function,  using the length-based selectivity coefficients
+		# CSelL from Hare's assessment model.
+		#approx(bin,CSelL.F,xout=la,yleft=0,yright=1)
+		sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)
+		
+		#sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
 		sr[,,i]  <- plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
 		sd[,,i]  <- 1-sr[,,i]
 		va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
@@ -176,7 +188,6 @@ function(fe=0, theta)
 	with(as.list(theta), {
 		
 	
-	
 	# Age-schedule information
 	# Survivorship array lx(A, G, S)
 	lx	<- array(0, dim)
@@ -202,7 +213,8 @@ function(fe=0, theta)
 	}
 	
 	# price premiums based on fish weight
-	pa[wa<10]  <- 3.00
+	pa[wa<5]   <- 0.00
+	pa[wa>=5.] <- 3.00
 	pa[wa>=10] <- 6.75
 	pa[wa>=20] <- 7.30
 	pa[wa>=40] <- 7.50
@@ -230,7 +242,8 @@ function(fe=0, theta)
 	std	<- cvlm*slim+1.e-30
 	for(i in 1:S)
 	{
-		sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
+		#sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
+		sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)$y
 		sr[,,i]  <- plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
 		sd[,,i]  <- 1-sr[,,i]
 		va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
@@ -330,7 +343,7 @@ function(fe=0, theta)
 	# points(bo, ro, pch=20, col=2)
 	# points(be, re, pch=20, col=3)
 	return(c(fe=fe, re=re, be=be, ye=ye, 
-		de=de, spr=spr, ypr=ypr, 
+		de=de, spr=spr, ypr=ypr, eye=max(0, landed.value-8*fe), 
 		dep=be/bo, wbar.f10=wbar[1], wbar.m10=wbar[2], 
 		landed.value=landed.value, 
 		discard.value=discard.value ))
@@ -374,39 +387,82 @@ function(obj, ...)
 }
 
 # SCENARIOS
-T2 = T1; T2$slim=0.00
-T3 = T1; T3$slim=70.0
-T4 = T1; T4$ulim=150.
-T5 = T1; T5$ulim=150.; T5$slim=70.0
+.scenarios <- function(T1, Model="M1")
+{
+	T2 = T1; T2$slim=0.00
+	T3 = T1; T3$slim=70.0
+	T4 = T1; T4$ulim=131.5
+	T5 = T1; T5$ulim=131.5; T5$slim=70.0
 
-S1 = data.frame(Scenario="Status quo", t(sapply(fe, tsasm, theta=T1)))
-S2 = data.frame(Scenario="No size limit", t(sapply(fe, tsasm, theta=T2)))
-S3 = data.frame(Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, theta=T3)))
-S4 = data.frame(Scenario="Slot size (81.3-150)", t(sapply(fe, tsasm, theta=T4)))
-S5 = data.frame(Scenario="Slot size (70.0-150)", t(sapply(fe, tsasm, theta=T5)))
+	S1 = data.frame(Model=Model, Scenario="Status quo", t(sapply(fe, tsasm, theta=T1)))
+	S2 = data.frame(Model=Model, Scenario="No size limit", t(sapply(fe, tsasm, theta=T2)))
+	S3 = data.frame(Model=Model, Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, theta=T3)))
+	S4 = data.frame(Model=Model, Scenario="Slot size (81.3-131.5)", t(sapply(fe, tsasm, theta=T4)))
+	S5 = data.frame(Model=Model, Scenario="Slot size (70.0-131.5)", t(sapply(fe, tsasm, theta=T5)))
 
-DF = rbind(S1, S2, S3, S4, S5)
+	DF = rbind(S1, S2, S3, S4, S5)
+	return(DF)
+}
 
-p<-ggplot(DF,aes(x=fe,y=de,col=Scenario)) +geom_line()
-print(p+opts(title="Wastage"))
-dev.copy2pdf(file="../FIGS/fig:wastage.pdf", width=10, height=7.5)
+M1 <- T1
+M2 <- T1; M2$bin=T1$bin - 10
+M3 <- T1; M3$bin=T1$bin + 10
+M4 <- T1; M4$linf=0.9*T1$linf
+M5 <- T1; M5$linf=0.9*T1$linf; M5$bin=T1$bin-10
+M6 <- T1; M5$linf=0.9*T1$linf; M6$bin=T1$bin+10
+DF <- rbind(.scenarios(M1, "M1"), .scenarios(M2, "M2"), .scenarios(M3, "M3"), 
+	.scenarios(M4, "M4"), .scenarios(M5, "M5"), .scenarios(M6, "M6"))
 
-p<-ggplot(DF,aes(x=fe,y=spr,col=Scenario)) +geom_line()
-print(p+opts(title="Relative spawning biomass per recruit"))
+# Max yield from status quo
+imax    <- which.max(subset(subset(DF,Model=="M1"),Scenario=="Status quo")$ye)
+ye_max  <- DF$ye[imax]
+ypr_max <- DF$ypr[imax]
+spr_max <- DF$spr[imax]
+eye_max <- DF$eye[imax]
+de_max  <- DF$de[imax]
 
-p<-ggplot(DF,aes(x=fe,y=ypr,col=Scenario)) +geom_line()
-print(p+opts(title="Yield per recruit"))
+p1 <- ggplot(DF,aes(x=fe,y=ypr/ypr_max,col=Scenario)) +geom_line()
+p1 <- p1 + labs(x = "Fishing mortality", y = "Relative yield per recruit") 
+p1 <- p1 + facet_wrap(~Model)
 
-p<-ggplot(DF,aes(x=fe,y=ye,col=Scenario)) +geom_line()
-print(p+opts(title="Equilibrium yield"))
-dev.copy2pdf(file="../FIGS/fig:yield.pdf", width=10, height=7.5)
+p2 <- ggplot(DF,aes(x=fe,y=spr/spr_max,col=Scenario)) +geom_line()
+p2 <- p2 + labs(x = "Fishing mortality", y = "Relative spawning potential ratio") 
+p2 <- p2 + facet_wrap(~Model)
 
-p<-ggplot(DF,aes(x=fe,y=landed.value,col=Scenario)) +geom_line()
+p3 <- ggplot(DF,aes(x=fe,y=ye/ye_max, col=Scenario)) +geom_line()
+p3 <- p3 + labs(x = "Fishing mortality", y = "Relative yield") 
+p3 <- p3 + facet_wrap(~Model)
+
+p4 <-ggplot(DF,aes(x=fe,y=eye/eye_max,col=Scenario)) +geom_line()
+p4 <- p4 + labs(x = "Fishing mortality", y = "Relative net landed value ($)") 
+p4 <- p4 + facet_wrap(~Model)
+
+
+p5 <- ggplot(DF,aes(x=fe,y=de/de_max,col=Scenario)) + geom_line() 
+p5 <- p5 + labs(x = "Fishing mortality", y = "Wastage (lb)") 
+p5 <- p5 + facet_wrap(~Model)
+
+
+
+
+
+
+
+
+p<-ggplot(DF,aes(x=fe,y=landed.value,col=Scenario)) +geom_line()+ facet_wrap(~Model)
 print(p+opts(title="Landed Value"))
 
-p<-ggplot(DF,aes(x=fe,y=discard.value,col=Scenario)) +geom_line()
+p<-ggplot(DF,aes(x=fe,y=discard.value,col=Scenario)) +geom_line()+ facet_wrap(~Model)
 print(p+opts(title="Value of dead discards"))
 
+draw <- function()
+{
+	print(p1); ggsave(file="../FIGS/fig:ypr.pdf", width=10, height=7.5)
+	print(p2); ggsave(file="../FIGS/fig:spr.pdf", width=10, height=7.5)
+	print(p3); ggsave(file="../FIGS/fig:yield.pdf", width=10, height=7.5)
+	print(p4); ggsave(file="../FIGS/fig:eye.pdf", width=10, height=7.5)
+	print(p5); ggsave(file="../FIGS/fig:waste.pdf", width=10, height=7.5)
+}
 
 # A key question is for every pound of bycatch what is the corresponding
 # yield loss to the directed fishery. This is computed by IPHC as the 
