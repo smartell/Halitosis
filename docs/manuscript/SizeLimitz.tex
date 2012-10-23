@@ -4,13 +4,44 @@
 %  Created by Martell on 2012-09-05.
 %  Copyright (c) 2012 UBC Fisheries Centre. All rights reserved.
 %
-\documentclass[12pt]{article}
+%\documentclass[12pt]{article}
+\documentclass[leqno,author,preprint]{nrc2}
+
+%% Journal-specific information for opening page -- pp.9-11 of guide:
+%% a. numbers:
+\setcounter{page}{1} %% replace 1 with starting page no.
+\volyear{XX}{2012} %% volume, year of journal
+\journal{Can. J. Fish. Aquat. Sci.} %% jrnl. abbrev. (see App.A of guide)
+\journalcode{cjfas} %% jrnl. acro (see App.A of guide)
+\filenumber{} %% NRC file number
+%% \filenumber*{} %% prefixes \filenumber to all page nos.
+%% NOTE: COMMENT OUT class options
+%% pagnf
+%% proof
+%% preprint
+%% trimmarks
+%% once no longer needed
+
+%% b. dates:
+\received{} %% insert date, no period
+\revreceived{} %% <same>
+\accepted{} %% <same>
+\revaccepted{} %% <same>
+%% \IDdates{} %% <same>. Use for ëRevised ...í etc.
+%% \webpub{} %% insert date
+%% \commdate{} %% <same>
+%% c. miscellaneous:
+%% \assoced{} %% insert name of Associate ed.
+%% \corred{} %% insert name of Corresponding ed.
+%% \dedication{} %% insert text as neede
+%% \abbreviations{} %% insert as needed
+
 
 % Use utf-8 encoding for foreign characters
 \usepackage[utf8]{inputenc}
 
 % Setup for fullpage use
-\usepackage{fullpage}
+%\usepackage{fullpage}
 
 % Bibliography
 \usepackage[round]{natbib}	
@@ -54,7 +85,8 @@
 \usepackage{graphicx}
 \fi
 \title{Size Limits, Post Release Mortality, and Cumulative Effects of Size Selective Fishing on Pacific Halibut}
-\author{ Steven Martell\\ IPHC }
+\author{ Steven Martell }
+\address{International Pacific Halibut Commission}
 
 \date{2012-09-05}
 
@@ -66,14 +98,14 @@
 \DeclareGraphicsExtensions{.eps, .jpg}
 \fi
 
-\maketitle
+
 
 
 \begin{abstract}
 	Harvesting fish is inherently a size-selective process where faster growing individuals recruit to the fishery at a younger age than slower growing individuals.  As a consequence of continuous fishing the size composition of each cohort may be eroded where only slower growing, smaller individuals, remain in the population.  Limiting the size range of fish that can be harvested can protect spawning biomass and allow for population renewal, if and only if, a fraction of the captured individuals that are outside the legal size range survive the harvesting process.  Release mortality (or discard mortality) is the fraction of individuals that die after capture and release.  If the release mortality rates are substantially greater than 0, limiting the legal size range could have a negative impact on potential spawning biomass if fishing mortality rates are sufficiently high.  Moreover abundant cohorts will experience above average total mortality rates at younger ages/sizes with minimum size limits in comparison to no size limits.  Cumulative effects of size-selective fishing give the appearance of declining size-at-age.  This effect is amplified with higher release mortality rates and minimum size limits that are much greater than the size-at-entry to the fishery.
 	
 \end{abstract}
-
+\maketitle
 \input{./Introduction/Introduction.tex}
 \input{./Methods/Model.tex}
 

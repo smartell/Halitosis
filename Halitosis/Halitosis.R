@@ -390,13 +390,13 @@ function(obj, ...)
 .scenarios <- function(T1, Model="M1")
 {
 	T2 = T1; T2$slim=0.00
-	T3 = T1; T3$slim=70.0
+	T3 = T1; T3$slim=81.3; T3$h=1.0
 	T4 = T1; T4$ulim=131.5
 	T5 = T1; T5$ulim=131.5; T5$slim=70.0
 
 	S1 = data.frame(Model=Model, Scenario="Status quo", t(sapply(fe, tsasm, theta=T1)))
 	S2 = data.frame(Model=Model, Scenario="No size limit", t(sapply(fe, tsasm, theta=T2)))
-	S3 = data.frame(Model=Model, Scenario="Mininum SL = 70cm", t(sapply(fe, tsasm, theta=T3)))
+	S3 = data.frame(Model=Model, Scenario="No SR relationship", t(sapply(fe, tsasm, theta=T3)))
 	S4 = data.frame(Model=Model, Scenario="Slot size (81.3-131.5)", t(sapply(fe, tsasm, theta=T4)))
 	S5 = data.frame(Model=Model, Scenario="Slot size (70.0-131.5)", t(sapply(fe, tsasm, theta=T5)))
 
@@ -410,16 +410,17 @@ M3 <- T1; M3$bin=T1$bin + 10
 M4 <- T1; M4$linf=0.9*T1$linf
 M5 <- T1; M5$linf=0.9*T1$linf; M5$bin=T1$bin-10
 M6 <- T1; M5$linf=0.9*T1$linf; M6$bin=T1$bin+10
-DF <- rbind(.scenarios(M1, "M1"), .scenarios(M2, "M2"), .scenarios(M3, "M3"), 
-	.scenarios(M4, "M4"), .scenarios(M5, "M5"), .scenarios(M6, "M6"))
+DF <- rbind(.scenarios(M1, "Base"), .scenarios(M2, "(-) selectivity"), .scenarios(M3, "(+) selectivity"), 
+	.scenarios(M4, "(-) Growth"), .scenarios(M5, "(-) growth & (-) selectivity"), .scenarios(M6, "(-) growth & (+) selectivity"))
 
 # Max yield from status quo
-imax    <- which.max(subset(subset(DF,Model=="M1"),Scenario=="Status quo")$ye)
+imax    <- which.max(subset(subset(DF,Model=="Base"),Scenario=="Status quo")$ye)
 ye_max  <- DF$ye[imax]
 ypr_max <- DF$ypr[imax]
 spr_max <- DF$spr[imax]
 eye_max <- DF$eye[imax]
 de_max  <- DF$de[imax]
+lv_max  <- DF$landed.value[imax]
 
 p1 <- ggplot(DF,aes(x=fe,y=ypr/ypr_max,col=Scenario)) +geom_line()
 p1 <- p1 + labs(x = "Fishing mortality", y = "Relative yield per recruit") 
@@ -442,15 +443,15 @@ p5 <- ggplot(DF,aes(x=fe,y=de/de_max,col=Scenario)) + geom_line()
 p5 <- p5 + labs(x = "Fishing mortality", y = "Wastage (lb)") 
 p5 <- p5 + facet_wrap(~Model)
 
+p6 <- ggplot(DF,aes(x=fe,y=landed.value/lv_max,col=Scenario)) +geom_line()
+p6 <- p6 + labs(x = "Fishing mortality", y = "Landed Value ($)") 
+p6 <- p6 + facet_wrap(~Model)
 
 
 
 
 
 
-
-p<-ggplot(DF,aes(x=fe,y=landed.value,col=Scenario)) +geom_line()+ facet_wrap(~Model)
-print(p+opts(title="Landed Value"))
 
 p<-ggplot(DF,aes(x=fe,y=discard.value,col=Scenario)) +geom_line()+ facet_wrap(~Model)
 print(p+opts(title="Value of dead discards"))
