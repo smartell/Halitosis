@@ -36,6 +36,7 @@ DATA_SECTION
 	matrix f01(1,nsex,1,narea);
 
 PARAMETER_SECTION
+	init_bounded_number   m(0,0.5);
 	init_vector   log_mu_l1(1,nsex);
 	init_vector   log_mu_l2(1,nsex);
 	init_vector  log_mu_rho(1,nsex);
@@ -192,7 +193,14 @@ FUNCTION calc_objective_function
 		}
 	}
 	
-	f = sum(lvec) + sum(pvec) + fpen;
+	/* prior for natural mortality rate */
+	double a = 25;
+	double s = 1./0.006;
+	dvariable m_prior;
+	m_prior  = dgamma(m,a,s);
+	m_prior += dnorm(-m/log_mu_rho(1),double(1.5),double(0.1));
+	
+	f = sum(lvec) + sum(pvec) + fpen + m_prior;
 	
 	
 FUNCTION dvar_vector dev_vector(dvar_vector &x, dvariable &pen)
@@ -216,6 +224,19 @@ FUNCTION dvariable dnorm( const dvariable& x, const prevariable& mu, const preva
 
 	return 0.5*log(2.*M_PI)+log(std)+0.5*square(x-mu)/(std*std);
   }
+FUNCTION dvariable dnorm( const dvariable& x, const double& mu, const double& std )
+  {
+
+	if( std<=0 ) 
+	{
+		cerr<<"Standard deviation is less than or equal to zero in "
+		"dnorm(const dvariable& x, const double& mu, const double& std)\n";
+		return 0;
+	}
+
+	return 0.5*log(2.*M_PI)+log(std)+0.5*square(x-mu)/(std*std);
+  }
+
 
 REPORT_SECTION
 	REPORT(area);
@@ -288,7 +309,7 @@ FUNCTION mcmcReport
 	{
 		cout<<"Writing MCMC report... Please wait"<<endl;
 		ofstream ofs("vonBH.mcmc");
-		ofs<<"sex \t area \t F0.1"<<endl;
+		ofs<<"sex \t area \t F0.1 \t M"<<endl;
 	}
 	nf ++;
 	cout<<nf<<endl;
@@ -301,7 +322,7 @@ FUNCTION mcmcReport
 	{
 		for(k=1;k<=narea;k++)
 		{
-			ofs<<j<<"\t"<<k<<"\t"<<f01(j,k)<<endl;
+			ofs<<j<<"\t"<<k<<"\t"<<f01(j,k)<<"\t"<<m<<endl;
 		}
 		
 	}
@@ -335,9 +356,9 @@ FUNCTION calcReferencePoints
 	/*loop over sexes and areas and calculate F0.1*/
 	double aa = 6.82e-6;
 	double bb = 3.24;
-	dvector m(1,2);
-	m(1) = 0.15;	//female m
-	m(2) = 0.135;	//male m
+	dvector m_m(1,2);
+	m_m(1) = value(m);	//female m
+	m_m(2) = 0.135/0.15*value(m);	//male m
 	
 	dvector la(1,nage);
 	dvector wa(1,nage);
@@ -366,7 +387,7 @@ FUNCTION calcReferencePoints
 	 	 	sa = c_selexfun.linapprox(bin,CSelL(j),la);
 	 	 
 	 	 	/*F0.1 reference point*/
-	 	 	yieldPerRecruit c_ypr(m(j),wa,sa);
+	 	 	yieldPerRecruit c_ypr(m_m(j),wa,sa);
 	 	 	f01(j,k) = c_ypr.getf01();
 	 	 	if(!mceval_phase())cout<<"Sex ="<<j<<" Area = "<<k<<" F0.1="<<f01(j,k)<<endl;
 		}

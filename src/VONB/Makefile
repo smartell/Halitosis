@@ -15,7 +15,7 @@ $(EXEC).rep: $(TPL) $(DAT)
 mcmc: runmc mceval dust
 
 runmc: $(EXEC) $(EXEC).rep
-	./$(EXEC) -ind $(DAT) -mcmc 100000 -mcsave 250 -nosdmcmc
+	./$(EXEC) -ind $(DAT) -mcmc 100000 -mcsave 250 -nosdmcmc -mcscale 50000
 
 mceval: $(EXEC) $(EXEC).psv
 	./$(EXEC) -ind $(DAT) -mceval

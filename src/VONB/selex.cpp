@@ -114,7 +114,7 @@ dvector Selex::eplogis( const dvector& x, const double& x1,
 // ------------------------------------------------------------------------------------ //
 static double approx1(const double& v, const dvector& x, const dvector& y)
 {
-    /* Approximate  y(v),  given (x,y)[i], i = 0,..,n-1 */
+    /** Approximate  y(v),  given (x,y)[i], i = 0,..,n-1 */
     int i, j, ij;
 
     //if(!n) return R_NaN;
