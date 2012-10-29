@@ -188,8 +188,7 @@ FUNCTION calc_objective_function
 			pvec(j,k) += dnorm(log(l2(j,k)), log_mu_l2(j), mfexp(log_sig_l2(j)) );
 			pvec(j,k) += dnorm(log(rho(j,k)),log_mu_rho(j),mfexp(log_sig_rho(j)));
 			pvec(j,k) += dnorm(log(b(j,k)),  log_mu_b(j),  mfexp(log_sig_b(j))  );
-			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), mfexp(log_sig_cv(j)) );
-			
+			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), mfexp(log_sig_cv(j)) );	
 		}
 	}
 	
