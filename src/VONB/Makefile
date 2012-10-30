@@ -2,6 +2,7 @@
 EXEC=vonBH
 TPL=$(EXEC).tpl
 DAT=$(EXEC).dat
+ARG=
 
 
 all: $(EXEC) $(EXEC).rep dust
@@ -10,7 +11,7 @@ $(EXEC): $(TPL)
 	admb $(EXEC)
 
 $(EXEC).rep: $(TPL) $(DAT)
-	./$(EXEC) -ind $(DAT)
+	./$(EXEC) -ind $(DAT) $(ARG)
 
 mcmc: runmc mceval dust
 

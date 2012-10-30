@@ -33,14 +33,14 @@ DF          <- data.frame(
 #		p6 <- weight-at-age fits by area and sex
 #       p7 <- Marginal posteriors for F0.1 for male and female by area panels
 #       p8 <- Marginal posterior plots for F0.1 for female by area.
-
+graphics.off()
 quartz("Size at age", width=10, height=6)
 p  <- ggplot(DF, aes(age, fl, col=factor(sex))) + geom_point(size=1, alpha=0.3) 
 p  <- p + geom_line(aes(age, fl_hat, col=factor(sex)), size=1) 
 p  <- p + facet_wrap(~area)
 p  <- p + labs(col="Sex") + xlab("Age (years)") + ylab("Fork length (cm)")
 p1 <- p
-ggsave(p1, file="../../FIGS/fig:lengthAgeFit.pdf")
+ ggsave(p1, file="../../FIGS/fig:lengthAgeFit.pdf")
 
 p  <- ggplot(DF, aes(age, fl, col=area)) +geom_point(size=1)
 p  <- p + geom_line(aes(age, fl_hat, col=area), size=1) + facet_wrap(~sex)
@@ -75,11 +75,30 @@ p6 <- p
 
 # Marginal posteriors for F0.1
 p  <- ggplot(A$rp, aes(x=F0.1, fill=sex)) +geom_density(adjust=2, size=0.0, alpha=0.5)
-p  <- p +labs(fill="Sex") + xlim(c(0, 1.0)) + facet_wrap(~area) 
+p  <- p +labs(fill="sex") + xlim(c(0, 1.0)) + facet_wrap(~area) 
 p7 <- p
 
 
 p  <- ggplot(subset(A$rp, sex=="Female"), aes(x=F0.1, fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
 p  <- p  + facet_wrap(~sex, scales="free") 
 p8 <- p
+
+
+p  <- ggplot(subset(A$rp, select=c("sex", "area", "L1")), aes(x=L1, fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
+p  <- p  + facet_wrap(~sex, scales="free") 
+pL1 <- p
+
+p  <- ggplot(subset(A$rp, select=c("sex", "area", "L2")), aes(x=L2, fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
+p  <- p  + facet_wrap(~sex, scales="free") 
+pL2 <- p
+
+p  <- ggplot(subset(A$rp, select=c("sex", "area", "rho")), aes(x=-log(rho), fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
+p  <- p +labs(x="Growth coefficient (k)") + facet_wrap(~sex, scales="free") 
+pk <- p
+
+
+# Table for growth parameter estimates
+# A.post.samp has the posterior samples for l1,  l2,  rho,  cv for each of the stocks.
+narea <- length(unique(A$area))
+
 

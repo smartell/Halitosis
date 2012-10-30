@@ -12,7 +12,7 @@ DATA_SECTION
 	int age_1;
 	int age_2;
 	!! age_1 = 2;
-	!! age_2 = 20;
+	!! age_2 = 25;
 	
 	init_int n;
 	init_int narea;
@@ -32,6 +32,16 @@ DATA_SECTION
 		sex  = ivector(column(data,4));
 	END_CALCS
 	
+	// prior means
+	vector prior_mu_l1(1,nsex);
+	vector prior_mu_l2(1,nsex);
+	
+	LOC_CALCS
+		prior_mu_l1(1) = log(40);
+		prior_mu_l1(2) = log(40);
+		prior_mu_l2(1) = log(150);
+		prior_mu_l2(2) = log(100);		
+	END_CALCS
 	// referenece points
 	matrix f01(1,nsex,1,narea);
 
@@ -43,34 +53,36 @@ PARAMETER_SECTION
 	init_vector    log_mu_b(1,nsex,2);
 	init_vector   log_mu_cv(1,nsex,3);
 	
-	init_vector  log_sig_l1(1,nsex,-2);
-	init_vector  log_sig_l2(1,nsex,-2);
-	init_vector log_sig_rho(1,nsex,-2);
-	init_vector   log_sig_b(1,nsex,-2);
-	init_vector  log_sig_cv(1,nsex,-2);
+	init_vector   log_tau2_l1(1,nsex,4);
+	init_vector   log_tau2_l2(1,nsex,4);
+	init_vector  log_tau2_rho(1,nsex,4);
+	init_vector    log_tau2_b(1,nsex,4);
+	init_vector   log_tau2_cv(1,nsex,4);
 	
 	
 	init_bounded_matrix  l1_dev(1,nsex,1,narea,-5,5,3);
 	init_bounded_matrix  l2_dev(1,nsex,1,narea,-5,5,3);
 	init_bounded_matrix rho_dev(1,nsex,1,narea,-5,5,3);
 	init_bounded_matrix   b_dev(1,nsex,1,narea,-5,5,4);
-	init_bounded_matrix  cv_dev(1,nsex,1,narea,-5,5,5);
+	init_bounded_matrix  cv_dev(1,nsex,1,narea,-5,5,4);
 	
 	objective_function_value f;
 	
 	number fpen;
 	
-	matrix   l1(1,nsex,1,narea);
-	matrix   l2(1,nsex,1,narea);
-	matrix  rho(1,nsex,1,narea);
-	matrix    b(1,nsex,1,narea);
-	matrix   cv(1,nsex,1,narea);
-	matrix lvec(1,nsex,1,narea);
-	matrix pvec(1,nsex,1,narea);
+	matrix    l1(1,nsex,1,narea);
+	matrix    l2(1,nsex,1,narea);
+	matrix   rho(1,nsex,1,narea);
+	matrix     b(1,nsex,1,narea);
+	matrix    cv(1,nsex,1,narea);
+	matrix  lvec(1,nsex,1,narea);
+	matrix  pvec(1,nsex,1,narea);
+	matrix prior(1,nsex,1,narea);
 
-	vector fl_hat(1,n);
-	vector sd_fl(1,n);
+	vector  fl_hat(1,n);
+	vector   sd_fl(1,n);
 	vector epsilon(1,n);
+	vector  sig_l1(1,nsex);
 	sdreport_number sd_linf;
 	
 INITIALIZATION_SECTION
@@ -80,11 +92,11 @@ INITIALIZATION_SECTION
         log_mu_b  0.00;
        log_mu_cv -2.30;
     
-      log_sig_l1  -15.24;
-      log_sig_l2  -0.07;
-     log_sig_rho  -5.30;
-	   log_sig_b  -12.30;
-	  log_sig_cv  -2.30;
+      log_tau2_l1  -1.0;
+      log_tau2_l2  -1.0;
+     log_tau2_rho  -1.0;
+	   log_tau2_b  -1.0;
+	  log_tau2_cv  -1.0;
 	
 PROCEDURE_SECTION
 	vonb_model();
@@ -169,6 +181,7 @@ FUNCTION double get_len(const double& age,const int& age_1, const int& age_2, co
 FUNCTION calc_objective_function
 	lvec.initialize();
 	pvec.initialize();
+	prior.initialize();
 	int i,j,k;
 	
 	/*negative log likelihoods*/
@@ -180,15 +193,30 @@ FUNCTION calc_objective_function
 	}
 	
 	/*prior densities*/
+	sig_l1 = sqrt(1.0/mfexp(log_tau2_l1));
 	for(j=1;j<=nsex;j++)
 	{
 		for(k=1;k<=narea;k++)
 		{
-			pvec(j,k)  = dnorm(log(l1(j,k)), log_mu_l1(j), mfexp(log_sig_l1(j)) );
-			pvec(j,k) += dnorm(log(l2(j,k)), log_mu_l2(j), mfexp(log_sig_l2(j)) );
-			pvec(j,k) += dnorm(log(rho(j,k)),log_mu_rho(j),mfexp(log_sig_rho(j)));
-			pvec(j,k) += dnorm(log(b(j,k)),  log_mu_b(j),  mfexp(log_sig_b(j))  );
-			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), mfexp(log_sig_cv(j)) );	
+			pvec(j,k)  = dnorm(log(l1(j,k)), log_mu_l1(j), sqrt(1.0/mfexp(log_tau2_l1(j))) );
+			pvec(j,k) += dnorm(log(l2(j,k)), log_mu_l2(j), sqrt(1.0/mfexp(log_tau2_l2(j))) );
+			pvec(j,k) += dnorm(log(rho(j,k)),log_mu_rho(j),sqrt(1.0/mfexp(log_tau2_rho(j))));
+			pvec(j,k) += dnorm(log(b(j,k)),  log_mu_b(j),  sqrt(1.0/mfexp(log_tau2_b(j)))  );
+			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), sqrt(1.0/mfexp(log_tau2_cv(j))) );	
+			
+			/* prior for std */
+			prior(j,k)  = dgamma(mfexp(log_tau2_l1(j) ),1.01,1.01);
+			prior(j,k) += dgamma(mfexp(log_tau2_l2(j) ),1.01,1.01);
+			prior(j,k) += dgamma(mfexp(log_tau2_rho(j)),1.01,1.01);
+			prior(j,k) += dgamma(mfexp(log_tau2_b(j)  ),1.01,1.01);
+			prior(j,k) += dgamma(mfexp(log_tau2_cv(j) ),1.01,1.01);
+			
+			/*prior for mu*/
+			prior(j,k) += dnorm(log_mu_l1(j),prior_mu_l1(j),0.1);
+			prior(j,k) += dnorm(log_mu_l1(j),prior_mu_l2(j),1.0);
+			prior(j,k) += dnorm(log_mu_rho(j),-0.1,0.2);
+			prior(j,k) += dnorm(log_mu_b(j),0.0,0.2);
+			prior(j,k) += dnorm(log_mu_cv(j),-2.3,1.0);
 		}
 	}
 	
@@ -199,7 +227,7 @@ FUNCTION calc_objective_function
 	m_prior  = dgamma(m,a,s);
 	m_prior += dnorm(-m/log_mu_rho(1),double(1.5),double(0.1));
 	
-	f = sum(lvec) + sum(pvec) + fpen + m_prior;
+	f = sum(lvec) + sum(pvec) + fpen + m_prior + sum(prior);
 	
 	
 FUNCTION dvar_vector dev_vector(dvar_vector &x, dvariable &pen)
@@ -220,9 +248,22 @@ FUNCTION dvariable dnorm( const dvariable& x, const prevariable& mu, const preva
 		"dnorm(const dvariable& x, const double& mu, const double& std)\n";
 		return 0;
 	}
-
+	
 	return 0.5*log(2.*M_PI)+log(std)+0.5*square(x-mu)/(std*std);
   }
+FUNCTION dvariable dnorm( const dvariable& x, const prevariable& mu, const dvariable& std )
+  {
+
+	if( std<=0 ) 
+	{
+		cerr<<"Standard deviation is less than or equal to zero in "
+		"dnorm(const dvariable& x, const double& mu, const double& std)\n";
+		return 0;
+	}
+	
+	return 0.5*log(2.*M_PI)+log(std)+0.5*square(x-mu)/(std*std);
+  }
+
 FUNCTION dvariable dnorm( const dvariable& x, const double& mu, const double& std )
   {
 
@@ -308,10 +349,10 @@ FUNCTION mcmcReport
 	{
 		cout<<"Writing MCMC report... Please wait"<<endl;
 		ofstream ofs("vonBH.mcmc");
-		ofs<<"sex \t area \t F0.1 \t M"<<endl;
+		ofs<<"sex \t area \t F0.1 \t M \t L1 \t L2 \t rho \t b"<<endl;
 	}
 	nf ++;
-	cout<<nf<<endl;
+	if(nf%10 == 0) cout<<nf<<endl;
 	ofstream ofs("vonBH.mcmc",ios::app);
 	
 	calcReferencePoints();
@@ -321,7 +362,14 @@ FUNCTION mcmcReport
 	{
 		for(k=1;k<=narea;k++)
 		{
-			ofs<<j<<"\t"<<k<<"\t"<<f01(j,k)<<"\t"<<m<<endl;
+			ofs<<j       <<setw(14);
+			ofs<<k       <<setw(14);
+			ofs<<f01(j,k)<<setw(14);
+			ofs<<m       <<setw(14);
+			ofs<<l1(j,k) <<setw(14);
+			ofs<<l2(j,k) <<setw(14);
+			ofs<<rho(j,k)<<setw(14);
+			ofs<<b(j,k)<<endl;
 		}
 		
 	}
@@ -344,12 +392,17 @@ FUNCTION calcReferencePoints
 	age.fill_seqadd(1,1);
 	
 	/*Selectivities*/
-	dvector bin(1,8);
-	dmatrix CSelL(1,2,1,8);
-	bin.fill("{50,60,70,80,90,100,110,120}");
+	dvector bin(1,9);
+	dmatrix CSelL(1,2,1,9);
+	bin.fill("{50,60,70,80,90,100,110,120,130}");
+	
 	/*Based on results from Hare's 2012 assessment*/
-	CSelL(1).fill("{1.63180e-09,3.25740e-09,0.0603022,0.300891,0.630344,0.913893,1,1}");
-	CSelL(2).fill("{2.17159e-09,3.96878e-03,0.0567109,0.281436,0.585461,0.835614,1,1}");
+	CSelL(1).fill("{1.63180e-09,3.25740e-09,0.0603022,0.300891,0.630344,0.913893,1,1,1}");
+	CSelL(2).fill("{2.17159e-09,3.96878e-03,0.0567109,0.281436,0.585461,0.835614,1,1,1}");
+	
+	/*Based on free selectivity from Ian stewart*/
+	CSelL(1).fill("{8.16741e-08,1.99065e-07,0.0364246,0.179659,0.312637,0.426665,0.567554,0.770228,1}");
+	CSelL(1).fill("{1.52172e-08,3.06671e-08,0.0081584,0.0258117,0.10118,0.237417,0.449484,0.712104,1}");
 	Selex c_selexfun;
 	
 	/*loop over sexes and areas and calculate F0.1*/
