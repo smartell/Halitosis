@@ -20,17 +20,32 @@
 require(Hmisc)
 require(ggplot2)
 require(reshape2)
+require(Riscam)
+source("GvonBGrowth.R")  #gvonb function
 # -------------------------------------------------------------------------- ##
 
 # Data and other constants
+regArea <- "2B"
 A	<- 35	# maximum age.
 G	<- 21	# number of growth groups
 S	<- 2	# number of sexes
 dim	<- c(A, G, S)
 age	<- 1:A	# vector of ages
+
+# Growth parameter estimates from vonBH
+GM  <- read.rep("../src/VONB/vonbh.rep")
+RA  <- c("2A","2B","2C","3A","3B","4A","4B","4C","4D")
+
 # Commercial selectivities from Hare 2012.
-bin   <- seq(50, 120, by=10)
-CSelL <- matrix(data=c(1.63180e-09,  3.25740e-09,  6.03022e-02,  3.00891e-01,  6.30344e-01,  9.13893e-01, 1.00000e+00,  1.00000e+00, 2.17159e-09,  3.96878e-03,  5.67109e-02,  2.81436e-01,  5.85461e-01,  8.35614e-01, 1.00000e+00,  1.00000e+00), nrow=8, ncol=2)
+bin   <- seq(60, 130, by=10)
+
+
+#CSelL <- matrix(data=c(1.63180e-09,  3.25740e-09,  6.03022e-02,  3.00891e-01,  6.30344e-01,  9.13893e-01, 1.00000e+00,  1.00000e+00, 2.17159e-09,  3.96878e-03,  5.67109e-02,  2.81436e-01,  5.85461e-01,  8.35614e-01, 1.00000e+00,  1.00000e+00), nrow=8, ncol=2)
+
+# Commercial selectivities from Stewart 2012.
+CSelL <- matrix((data=c(0,  0.0252252,  0.250685,  0.617268,  1,  1.36809,  1.74292,  2.12022, 0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)), nrow=8, ncol=2)
+#CSelL <- t(t(CSelL)/apply(CSelL,2,max))
+
 
 pg	<- dnorm(seq(-3, 3, length=G), 0, 1); pg <- pg/sum(pg)
 
@@ -51,19 +66,29 @@ PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm, bin=bin
 
 
 # Sex specific parameters (female, male).
-m		<- c(0.15, 0.135)			# natural mortality rate
+m		<- c(0.15, 0.1439)			# natural mortality rate
 #0.15 0.135474
 a50		<- rep(10.91, 2)			# age at 50% maturity
 k50		<- rep(1.406, 2)			# std at 50% maturity
 a		<- rep(6.821e-6, 2)			# length-weight allometry (Clark 1992)
 b		<- rep(3.24, 2)				# length-weight allometry (CLark 1992)
-#linf	<- c(145, 110)				# Range female 145-190, male 110-155 (cm)
+
+# Default parameters
 linf    <- c(151.568,  99.3607)		# From 2011 Length_age data
-#k		<- c(0.1, 0.12)				# eyeballed growth pars from Clark & Hare 2002.
-k		<- c(0.0820581, 0.135409)   # Fron 20111 Length_age data
+k		<- c(0.0820581, 0.135409)   # Fron 2011 Length_age data
+t0      <- rep(0, 2)
+pp      <- rep(1, 2)
 CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
 
-PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, CVlinf=CVlinf)
+# Get growth parameters by regArea
+ii <- match(regArea, RA)
+linf <- GM$linf[, ii]
+k    <- GM$vbk[, ii]
+t0   <- GM$to[, ii]
+pp   <- GM$p[, ii]
+         
+
+PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, t0=t0, pp=pp, CVlinf=CVlinf)
 rownames(PHI)=c("Female", "Male")
 
 T1 <- c(THETA, PHI, PI)
@@ -71,6 +96,9 @@ T1 <- c(THETA, PHI, PI)
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
 fe		<- seq(0, 0.6, b=0.01)
+
+
+
 
 lifeh	<-
 function(fe = 0)
@@ -88,12 +116,13 @@ function(fe = 0)
 		lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
 		
 		# growth
-		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
+		#'vonb'  <- function(linf,k, t0, pp) len <- linf*(1-exp(-k*(age-t0)))^pp
 		dev     <- linf[i]*CVlinf[i]
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
-		la[,,i] <- sapply(linf.g, vonb,k=k[i])
+		la[,,i] <- sapply(linf=linf.g, gvonb,vbk=k[i], to=t0[i], p=pp[i])
+		#sapply(linf,gvonb,t=age,vbk=k[1],to=to[1],p=pp[1])
 		wa[,,i] <- a[i]*la[,,i]^b[i]
-		
+		browswer()
 		# maturity (this assumes maturity at a fixed age)
 		fa[,,i] <- ma*wa[,,i]
 	}
@@ -109,7 +138,7 @@ function(fe = 0)
 		# SM Adding approx function,  using the length-based selectivity coefficients
 		# CSelL from Hare's assessment model.
 		#approx(bin,CSelL.F,xout=la,yleft=0,yright=1)
-		sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)
+		sc[,,i]  <- approx(bin, CSelL[,i], la[,,i])$y#, yleft=0, yright=1)
 		
 		#sc[,,i]  <- plogis(la[,,i],location=lhat, scale=ghat)
 		sr[,,i]  <- plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
@@ -181,7 +210,7 @@ tsasm	<-
 #function(fe=0, slim=0, ulim=1000, dm=0.16)
 function(fe=0, theta)
 {
-	# A two sex age structured model. #
+	# A two-sex age structured model. #
 	# SM Changing arguments (fe,  THETA)
 	# Where theta is a list of the global parameters used in the model.
 	
@@ -202,10 +231,11 @@ function(fe=0, theta)
 		lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
 		
 		# growth
-		'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
+		#'vonb'  <- function(linf,k) len <- linf*(1-exp(-k*age))
+		'vonb'  <- function(linf,k, t0, pp) len <- linf*(1-exp(-k*(age-t0)))^pp
 		dev     <- linf[i]*CVlinf[i]
 		linf.g  <- seq(linf[i]-dev, linf[i]+dev, length=G)
-		la[,,i] <- sapply(linf.g, vonb,k=k[i])
+		la[,,i] <- sapply(linf.g, vonb,k=k[i], t0=t0[i], pp=pp[i])
 		wa[,,i] <- a[i]*la[,,i]^b[i]
 		
 		# maturity (this assumes maturity at a fixed age)
@@ -386,24 +416,32 @@ function(obj, ...)
 	print(g)
 }
 
+
+
+
+
 # SCENARIOS
 .scenarios <- function(T1, Model="M1")
 {
 	T2 = T1; T2$slim=0.00
 	T3 = T1; T3$slim=81.3; T3$h=1.0
-	T4 = T1; T4$ulim=131.5
-	T5 = T1; T5$ulim=131.5; T5$slim=70.0
+	T4 = T1; T4$ulim=140.0
+	T5 = T1; T5$ulim=140.0; T5$slim=70.0
 
 	S1 = data.frame(Model=Model, Scenario="Status quo", t(sapply(fe, tsasm, theta=T1)))
 	S2 = data.frame(Model=Model, Scenario="No size limit", t(sapply(fe, tsasm, theta=T2)))
 	S3 = data.frame(Model=Model, Scenario="No SR relationship", t(sapply(fe, tsasm, theta=T3)))
-	S4 = data.frame(Model=Model, Scenario="Slot size (81.3-131.5)", t(sapply(fe, tsasm, theta=T4)))
-	S5 = data.frame(Model=Model, Scenario="Slot size (70.0-131.5)", t(sapply(fe, tsasm, theta=T5)))
+	S4 = data.frame(Model=Model, Scenario="Slot size (81.3-140.0)", t(sapply(fe, tsasm, theta=T4)))
+	S5 = data.frame(Model=Model, Scenario="Slot size (70.0-140.0)", t(sapply(fe, tsasm, theta=T5)))
 
 	DF = rbind(S1, S2, S3, S4, S5)
 	return(DF)
 }
 
+# BASE CASE BY REG AREA
+RA1 <- T1
+
+# Alternative policy options
 M1 <- T1
 M2 <- T1; M2$bin=T1$bin - 10
 M3 <- T1; M3$bin=T1$bin + 10
@@ -426,7 +464,7 @@ p1 <- ggplot(DF,aes(x=fe,y=ypr/ypr_max,col=Scenario)) +geom_line()
 p1 <- p1 + labs(x = "Fishing mortality", y = "Relative yield per recruit") 
 p1 <- p1 + facet_wrap(~Model)
 
-p2 <- ggplot(DF,aes(x=fe,y=spr/spr_max,col=Scenario)) +geom_line()
+p2 <- ggplot(DF,aes(x=fe,y=spr,col=Scenario)) +geom_line() + geom_hline(aes(yintercept=0.3))
 p2 <- p2 + labs(x = "Fishing mortality", y = "Relative spawning potential ratio") 
 p2 <- p2 + facet_wrap(~Model)
 
@@ -453,7 +491,7 @@ p6 <- p6 + facet_wrap(~Model)
 
 
 
-p<-ggplot(DF,aes(x=fe,y=discard.value,col=Scenario)) +geom_line()+ facet_wrap(~Model)
+p<-ggplot(DF,aes(x=fe,y=discard.value,col=Scenario)) +geom_line(alpha=1.0)+ facet_wrap(~Model)
 print(p+opts(title="Value of dead discards"))
 
 draw <- function()

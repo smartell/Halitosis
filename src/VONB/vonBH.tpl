@@ -49,6 +49,21 @@ DATA_SECTION
 	// referenece points
 	matrix f01(1,nsex,1,narea);
 
+INITIALIZATION_SECTION
+			   m  0.15;
+       log_mu_l1  1.50;
+       log_mu_l2  4.90;
+      log_mu_rho  0.50;
+        log_mu_b  0.00;
+       log_mu_cv -2.30;
+
+      log_tau2_l1  -0.8;
+      log_tau2_l2  -0.8;
+     log_tau2_rho  -0.8;
+	   log_tau2_b  -0.8;
+	  log_tau2_cv  -0.8;
+
+
 PARAMETER_SECTION
 	init_bounded_number   m(0,0.5,-4);
 	init_vector   log_mu_l1(1,nsex);
@@ -57,11 +72,11 @@ PARAMETER_SECTION
 	init_vector    log_mu_b(1,nsex,2);
 	init_vector   log_mu_cv(1,nsex,3);
 	
-	init_vector   log_tau2_l1(1,nsex,4);
-	init_vector   log_tau2_l2(1,nsex,4);
-	init_vector  log_tau2_rho(1,nsex,4);
-	init_vector    log_tau2_b(1,nsex,4);
-	init_vector   log_tau2_cv(1,nsex,4);
+	init_vector   log_tau2_l1(1,nsex,3);
+	init_vector   log_tau2_l2(1,nsex,3);
+	init_vector  log_tau2_rho(1,nsex,3);
+	init_vector    log_tau2_b(1,nsex,3);
+	init_vector   log_tau2_cv(1,nsex,3);
 	
 	
 	init_bounded_matrix  l1_dev(1,nsex,1,narea,-5,5,3);
@@ -69,6 +84,7 @@ PARAMETER_SECTION
 	init_bounded_matrix rho_dev(1,nsex,1,narea,-5,5,3);
 	init_bounded_matrix   b_dev(1,nsex,1,narea,-5,5,4);
 	init_bounded_matrix  cv_dev(1,nsex,1,narea,-5,5,4);
+	//random_effects_matrix cv_dev(1,nsex,1,narea,4);
 	
 	objective_function_value f;
 	
@@ -95,19 +111,6 @@ PARAMETER_SECTION
 	sdreport_vector sd_la_female(1,max_age);
 	sdreport_vector sd_la_male(1,max_age);
 	
-INITIALIZATION_SECTION
-			   m  0.15;
-       log_mu_l1  1.50;
-       log_mu_l2  4.90;
-      log_mu_rho  0.50;
-        log_mu_b  0.00;
-       log_mu_cv -2.30;
-    
-      log_tau2_l1  -1.0;
-      log_tau2_l2  -1.0;
-     log_tau2_rho  -1.0;
-	   log_tau2_b  -1.0;
-	  log_tau2_cv  -1.0;
 	
 PROCEDURE_SECTION
 	vonb_model();
@@ -338,11 +341,11 @@ REPORT_SECTION
 	REPORT(fl_hat);
 	REPORT(epsilon);
 	
-	dvector l1 = value(mfexp(log_mu_l1));
-	dvector l2 = value(mfexp(log_mu_l2));
-	dvector rho = 1./value(1.0+ mfexp(log_mu_rho));
-	dvector b = value(mfexp(log_mu_b));
-	dvector cv = value(mfexp(log_mu_cv));
+	//dvector l1 = value(mfexp(log_mu_l1));
+	//dvector l2 = value(mfexp(log_mu_l2));
+	//dvector rho = 1./value(1.0+ mfexp(log_mu_rho));
+	//dvector b = value(mfexp(log_mu_b));
+	//dvector cv = value(mfexp(log_mu_cv));
 	REPORT(l1);
 	REPORT(l2);
 	REPORT(rho);
@@ -378,23 +381,28 @@ REPORT_SECTION
 	// linf = [(exp(vbk*t2)*l2^b-exp(vbk*t1)*l1^b))/(exp(vbk*t2)-exp(vbk*t1))]^(1/b)
 	// to = t1 + t2 - 1/vbk*log[(exp(vbk*t2)*l2^b-exp(vbk*t1)*l1^b))/(exp(vbk*t2)-exp(vbk*t1))]
 	
-	dvector linf(1,nsex);
-	dvector  vbk(1,nsex);
-	dvector   t0(1,nsex);
-	dvector    p(1,nsex);
-	p    = 1./b;
-	vbk  = -log(rho);
-	dvector n1 = elem_prod(exp(vbk*age_2),pow(l2,b))-elem_prod(exp(vbk*age_1),pow(l1,b));
-	dvector n2 = exp(vbk*age_2)-exp(vbk*age_1);
-	linf = pow(elem_div(n1,n2),p);
-	t0   = double(age_1)+double(age_2)-elem_prod(1.0/vbk,log(elem_div(n1,n2)));
-
+	// Loop over sex and calculate area specfic von values
+	dmatrix linf(1,nsex,1,narea);
+	dmatrix  vbk(1,nsex,1,narea);
+	dmatrix   to(1,nsex,1,narea);
+	dmatrix    p(1,nsex,1,narea);
 	
+	for(int j=1;j<=nsex; j++)
+	{
+		for(int k=1;k<=narea; k++)
+		{
+			p(j,k)    = value(1.0/b(j,k));
+			vbk(j,k)  = value(-log(rho(j,k)));
+			double n1 = value(exp(vbk(j,k)*age_2)*pow(l2(j,k),b(j,k)) - exp(vbk(j,k)*age_1)*pow(l1(j,k),b(j,k)));
+			double d1 = exp(vbk(j,k)*age_2) - exp(vbk(j,k)*age_1);
+			linf(j,k) = value(pow(n1/d1,1.0/b(j,k))); 
+			to(j,k)   = age_1+age_2 - 1.0/vbk(j,k)*log(n1/d1);
+		}
+	}
 	REPORT(linf);
 	REPORT(vbk);
-	REPORT(t0);
+	REPORT(to);
 	REPORT(p);
-	
 	
 FUNCTION mcmcReport
   {
