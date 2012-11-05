@@ -4,6 +4,8 @@
 //  Created by Martell on 2012-09-28.
 //  Copyright (c) 2012. All rights reserved.
 //  Comments:
+//         - Constraint in the vbk>0, and rho=exp(-vbk), therefore
+//         - rho < 1.0 in order to satisfy the above constraint.
 //  ******************************************************************
 
 
@@ -20,6 +22,7 @@ DATA_SECTION
 	init_matrix data(1,n,1,4);
 	
 	//#area	 age	 fl	 sex
+	int max_age;
 	ivector area(1,n);
 	vector   age(1,n);
 	vector    fl(1,n);
@@ -30,6 +33,7 @@ DATA_SECTION
 		age  = column(data,2);
 		fl   = column(data,3);
 		sex  = ivector(column(data,4));
+		max_age = max(age);
 	END_CALCS
 	
 	// prior means
@@ -46,7 +50,7 @@ DATA_SECTION
 	matrix f01(1,nsex,1,narea);
 
 PARAMETER_SECTION
-	init_bounded_number   m(0,0.5);
+	init_bounded_number   m(0,0.5,-4);
 	init_vector   log_mu_l1(1,nsex);
 	init_vector   log_mu_l2(1,nsex);
 	init_vector  log_mu_rho(1,nsex);
@@ -83,12 +87,19 @@ PARAMETER_SECTION
 	vector   sd_fl(1,n);
 	vector epsilon(1,n);
 	vector  sig_l1(1,nsex);
+	vector  sig_l2(1,nsex);
+	vector sig_rho(1,nsex);
+	vector   sig_b(1,nsex);
+	vector  sig_cv(1,nsex);
 	sdreport_number sd_linf;
+	sdreport_vector sd_la_female(1,max_age);
+	sdreport_vector sd_la_male(1,max_age);
 	
 INITIALIZATION_SECTION
-       log_mu_l1  2.00;
+			   m  0.15;
+       log_mu_l1  1.50;
        log_mu_l2  4.90;
-      log_mu_rho -0.15;
+      log_mu_rho  0.50;
         log_mu_b  0.00;
        log_mu_cv -2.30;
     
@@ -101,6 +112,7 @@ INITIALIZATION_SECTION
 PROCEDURE_SECTION
 	vonb_model();
 	sd_linf = mfexp(log_mu_l2(1));
+	if(sd_phase()) calc_sd_variables();
 	calc_objective_function();
 	if(mceval_phase())
 		mcmcReport();
@@ -117,7 +129,7 @@ FUNCTION vonb_model
 	{
 		 l1(j) = mfexp( log_mu_l1(j) + dev_vector( l1_dev(j),fpen));
 		 l2(j) = mfexp( log_mu_l2(j) + dev_vector( l2_dev(j),fpen));
-		rho(j) = mfexp(log_mu_rho(j) + dev_vector(rho_dev(j),fpen));
+		rho(j) = 1.0/(1.0 + mfexp(log_mu_rho(j) + dev_vector(rho_dev(j),fpen)));
 		  b(j) = mfexp(  log_mu_b(j) + dev_vector(  b_dev(j),fpen));
 		 cv(j) = mfexp( log_mu_cv(j) + dev_vector( cv_dev(j),fpen));
 	}
@@ -193,16 +205,22 @@ FUNCTION calc_objective_function
 	}
 	
 	/*prior densities*/
-	sig_l1 = sqrt(1.0/mfexp(log_tau2_l1));
+	sig_l1  = sqrt(1.0/mfexp(log_tau2_l1));
+	sig_l2  = sqrt(1.0/mfexp(log_tau2_l2));
+	sig_rho = sqrt(1.0/mfexp(log_tau2_rho));
+	sig_b   = sqrt(1.0/mfexp(log_tau2_b) );
+	sig_cv  = sqrt(1.0/mfexp(log_tau2_cv));
 	for(j=1;j<=nsex;j++)
 	{
+		dvariable j_mu_rho = 1.0/(1.0+mfexp(log_mu_rho(j)));
 		for(k=1;k<=narea;k++)
 		{
-			pvec(j,k)  = dnorm(log(l1(j,k)), log_mu_l1(j), sqrt(1.0/mfexp(log_tau2_l1(j))) );
-			pvec(j,k) += dnorm(log(l2(j,k)), log_mu_l2(j), sqrt(1.0/mfexp(log_tau2_l2(j))) );
-			pvec(j,k) += dnorm(log(rho(j,k)),log_mu_rho(j),sqrt(1.0/mfexp(log_tau2_rho(j))));
-			pvec(j,k) += dnorm(log(b(j,k)),  log_mu_b(j),  sqrt(1.0/mfexp(log_tau2_b(j)))  );
-			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), sqrt(1.0/mfexp(log_tau2_cv(j))) );	
+			
+			pvec(j,k)  = dnorm(log(l1(j,k)), log_mu_l1(j), sig_l1(j) );
+			pvec(j,k) += dnorm(log(l2(j,k)), log_mu_l2(j), sig_l2(j) );
+			pvec(j,k) += dnorm(log(rho(j,k)),log(j_mu_rho),sig_rho(j));
+			pvec(j,k) += dnorm(log(b(j,k)),  log_mu_b(j),  sig_b(j)  );
+			pvec(j,k) += dnorm(log(cv(j,k)), log_mu_cv(j), sig_cv(j) );	
 			
 			/* prior for std */
 			prior(j,k)  = dgamma(mfexp(log_tau2_l1(j) ),1.01,1.01);
@@ -213,19 +231,28 @@ FUNCTION calc_objective_function
 			
 			/*prior for mu*/
 			prior(j,k) += dnorm(log_mu_l1(j),prior_mu_l1(j),0.1);
-			prior(j,k) += dnorm(log_mu_l1(j),prior_mu_l2(j),1.0);
-			prior(j,k) += dnorm(log_mu_rho(j),-0.1,0.2);
+			prior(j,k) += dnorm(log_mu_l1(j),prior_mu_l2(j),0.2);
+			/*
+				Prior mean for log_mu_rho
+				if let vbk = 0.1
+				then rho = exp(-vbk) = exp(-0.1) = 0.905
+				Let theta = estimated rho in logit space
+				then theta =log((1-rho)/rho), and given vbk=0.1
+				this translates into a mean theta of -2.252
+			*/
+			prior(j,k) += dnorm(log_mu_rho(j),-2.252,0.2);
 			prior(j,k) += dnorm(log_mu_b(j),0.0,0.2);
 			prior(j,k) += dnorm(log_mu_cv(j),-2.3,1.0);
 		}
 	}
 	
 	/* prior for natural mortality rate */
-	double a = 25;
-	double s = 1./0.006;
+	double a      = 25;
+	double s      = 1./0.006;
 	dvariable m_prior;
-	m_prior  = dgamma(m,a,s);
-	m_prior += dnorm(-m/log_mu_rho(1),double(1.5),double(0.1));
+	m_prior       = dgamma(m,a,s);
+	dvariable vbk = -log(1.0/(1.0+mfexp(log_mu_rho(1))));
+	m_prior      += dnorm(m/vbk,double(1.5),double(0.1));
 	
 	f = sum(lvec) + sum(pvec) + fpen + m_prior + sum(prior);
 	
@@ -277,6 +304,31 @@ FUNCTION dvariable dnorm( const dvariable& x, const double& mu, const double& st
 	return 0.5*log(2.*M_PI)+log(std)+0.5*square(x-mu)/(std*std);
   }
 
+FUNCTION calc_sd_variables
+  {
+	dvector iage(1,max_age);
+	iage.fill_seqadd(1,1);
+	dvar_matrix p_fl(1,nsex,1,max_age);
+	for(int j=1;j<=nsex;j++)
+	{
+		for(int i=1;i<=max_age;i++)
+		{
+			dvariable l1  = exp(log_mu_l1(j));  // 50;       //
+			dvariable l2  = exp(log_mu_l2(j));  // 150;      //
+			dvariable rho = 1.0/(1.0+exp(log_mu_rho(j))); // exp(-0.2);//
+			dvariable   b = exp(log_mu_b(j));   // 1.0;      //
+			p_fl(j,i) = get_len(i,age_1,age_2,l1,l2,rho,b);
+		}
+		if(j==1)
+		{
+			sd_la_female = p_fl(j);
+		}
+		else
+		{
+			sd_la_male = p_fl(j);
+		}
+	}		
+  }
 
 REPORT_SECTION
 	REPORT(area);
@@ -288,7 +340,7 @@ REPORT_SECTION
 	
 	dvector l1 = value(mfexp(log_mu_l1));
 	dvector l2 = value(mfexp(log_mu_l2));
-	dvector rho = value(mfexp(log_mu_rho));
+	dvector rho = 1./value(1.0+ mfexp(log_mu_rho));
 	dvector b = value(mfexp(log_mu_b));
 	dvector cv = value(mfexp(log_mu_cv));
 	REPORT(l1);
@@ -296,8 +348,12 @@ REPORT_SECTION
 	REPORT(rho);
 	REPORT(b);
 	REPORT(cv);
+	REPORT(sig_l1);
+	REPORT(sig_l2);
+	REPORT(sig_rho);
 	
-	int max_age = max(age);
+	
+	
 	dvector iage(1,max_age);
 	iage.fill_seqadd(1,1);
 	dmatrix p_fl(1,nsex,1,max_age);
@@ -307,7 +363,7 @@ REPORT_SECTION
 		{
 			dvariable l1  = exp(log_mu_l1(j));  // 50;       //
 			dvariable l2  = exp(log_mu_l2(j));  // 150;      //
-			dvariable rho = exp(log_mu_rho(j)); // exp(-0.2);//
+			dvariable rho = 1.0/(1.0+exp(log_mu_rho(j))); // exp(-0.2);//
 			dvariable   b = exp(log_mu_b(j));   // 1.0;      //
 			p_fl(j,i) = value(get_len(i,age_1,age_2,l1,l2,rho,b));
 		}
@@ -349,7 +405,7 @@ FUNCTION mcmcReport
 	{
 		cout<<"Writing MCMC report... Please wait"<<endl;
 		ofstream ofs("vonBH.mcmc");
-		ofs<<"sex \t area \t F0.1 \t M \t L1 \t L2 \t rho \t b"<<endl;
+		ofs<<"sex \t area \t F0.1 \t M \t L1 \t L2 \t rho \t b \t cv"<<endl;
 	}
 	nf ++;
 	if(nf%10 == 0) cout<<nf<<endl;
@@ -369,7 +425,8 @@ FUNCTION mcmcReport
 			ofs<<l1(j,k) <<setw(14);
 			ofs<<l2(j,k) <<setw(14);
 			ofs<<rho(j,k)<<setw(14);
-			ofs<<b(j,k)<<endl;
+			ofs<<b(j,k)  <<setw(14);
+			ofs<<cv(j,k)<<endl;
 		}
 		
 	}

@@ -5,7 +5,7 @@ require(Riscam)
 require(ggplot2)
 A 						<- read.admb("vonBH")
 A$rp 					<- read.table("vonBH.mcmc", header=TRUE)
-colnames(A$post.samp)	<- A$fit$names[1:A$fit$nopar]
+colnames(A$post.samp)	<- A$fit$names[1:(A$fit$nopar-1)]
 A$post.samp             <- as.data.frame(A$post.samp)
 
 sx          <- c("Female","Male")
@@ -79,7 +79,7 @@ p  <- p +labs(fill="sex") + xlim(c(0, 1.0)) + facet_wrap(~area)
 p7 <- p
 
 
-p  <- ggplot(subset(A$rp, sex=="Female"), aes(x=F0.1, fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
+p  <- ggplot(subset(A$rp, sex=="Female"), aes(x=F0.1, fill=area)) +geom_density(size=0.1, alpha=0.25)
 p  <- p  + facet_wrap(~sex, scales="free") 
 p8 <- p
 
@@ -95,6 +95,15 @@ pL2 <- p
 p  <- ggplot(subset(A$rp, select=c("sex", "area", "rho")), aes(x=-log(rho), fill=area)) +geom_density(adjust=1.5, size=0.1, alpha=0.25)
 p  <- p +labs(x="Growth coefficient (k)") + facet_wrap(~sex, scales="free") 
 pk <- p
+
+# Marginal posteriors for hyper parameters L1,  L2,  rho,  b
+require(reshape2)
+mdf <- melt(A$rp,id.vars=c("sex","area"))
+pM1 <- ggplot(subset(mdf,variable=="L1"),aes(x=value)) + geom_density(aes(col=area)) +facet_wrap(~sex)
+pM2 <- ggplot(subset(mdf,variable=="L2"),aes(x=value)) + geom_density(aes(col=area)) +facet_wrap(~sex)
+pM3 <- ggplot(subset(mdf,variable=="rho"),aes(x=value)) + geom_density(aes(col=area)) +facet_wrap(~sex)
+pM4 <- ggplot(subset(mdf,variable=="b"),aes(x=value)) + geom_density(aes(col=area)) +facet_wrap(~sex)
+pM5 <- ggplot(subset(mdf,variable=="cv"),aes(x=value)) + geom_density(aes(col=area)) +facet_wrap(~sex)
 
 
 # Table for growth parameter estimates
