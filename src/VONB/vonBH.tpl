@@ -394,9 +394,10 @@ REPORT_SECTION
 			p(j,k)    = value(1.0/b(j,k));
 			vbk(j,k)  = value(-log(rho(j,k)));
 			double n1 = value(exp(vbk(j,k)*age_2)*pow(l2(j,k),b(j,k)) - exp(vbk(j,k)*age_1)*pow(l1(j,k),b(j,k)));
-			double d1 = exp(vbk(j,k)*age_2) - exp(vbk(j,k)*age_1);
+			double d1 = exp(vbk(j,k)*age_2)-exp(vbk(j,k)*age_1);
+			double d2 = value(pow(l2(j,k),b(j,k))-pow(l1(j,k),b(j,k)));
 			linf(j,k) = value(pow(n1/d1,1.0/b(j,k))); 
-			to(j,k)   = age_1+age_2 - 1.0/vbk(j,k)*log(n1/d1);
+			to(j,k)   = age_1+age_2 - 1.0/vbk(j,k)*log(n1/d2);
 		}
 	}
 	REPORT(linf);

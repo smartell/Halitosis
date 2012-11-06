@@ -2,6 +2,15 @@
 # Halitosis.R
 # Written by Steve Martell,  IPHC
 # Date: Jan 8, 2012
+# DATE: November 5,  2012.  Re-organization of the code
+# CODE ORGANIZATION
+# 	Dependencies.
+#   Read in external results from growth parameter estimatation,  selectivities.
+#   PSEUDOCODE:
+# 				1) Construct a LIST object for each regulatory area with parameters. (RegArea)
+# 				2) For each RegArea
+# 					- append life-table array (length, weight, fecundity)
+# 
 # 
 # Feb 7, 2011.  Added multiple growth groups to allow for cumulative effects
 # of size selective fishing.  Need to show how mean weigth-at-age decreases
@@ -26,28 +35,27 @@ source("GvonBGrowth.R")  #gvonb function
 
 # Data and other constants
 regArea <- "2B"
-A	<- 35	# maximum age.
-G	<- 21	# number of growth groups
-S	<- 2	# number of sexes
-dim	<- c(A, G, S)
-age	<- 1:A	# vector of ages
+A	<- 35					# maximum age.
+G	<- 11					# number of growth groups
+S	<- 2					# number of sexes
+dim	<- c(A, G, S)			# array dimensions
+age	<- 1:A					# vector of ages
+pg	<- dnorm(seq(-3, 3, length=G), 0, 1); 
+pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
+fe  <- seq(0, 0.6, b=0.01) 	#sequence of fishing mortality rates.
 
 # Growth parameter estimates from vonBH
 GM  <- read.rep("../src/VONB/vonbh.rep")
 RA  <- c("2A","2B","2C","3A","3B","4A","4B","4C","4D")
 
-# Commercial selectivities from Hare 2012.
-bin   <- seq(60, 130, by=10)
-
-
-#CSelL <- matrix(data=c(1.63180e-09,  3.25740e-09,  6.03022e-02,  3.00891e-01,  6.30344e-01,  9.13893e-01, 1.00000e+00,  1.00000e+00, 2.17159e-09,  3.96878e-03,  5.67109e-02,  2.81436e-01,  5.85461e-01,  8.35614e-01, 1.00000e+00,  1.00000e+00), nrow=8, ncol=2)
-
 # Commercial selectivities from Stewart 2012.
-CSelL <- matrix((data=c(0,  0.0252252,  0.250685,  0.617268,  1,  1.36809,  1.74292,  2.12022, 0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)), nrow=8, ncol=2)
+bin   <- seq(60, 130, by=10)
+CSelL <- matrix((data=c(0,  0.0252252,  0.250685,  0.617268,  1,  1.36809,  1.74292,  2.12022, 
+						0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)
+				), nrow=8, ncol=2)
+				
 #CSelL <- t(t(CSelL)/apply(CSelL,2,max))
 
-
-pg	<- dnorm(seq(-3, 3, length=G), 0, 1); pg <- pg/sum(pg)
 
 # Population parameters 
 bo		<- 100.0			# unfished female spawning biomass
@@ -61,8 +69,7 @@ ghat	<- 1/0.1667
 slim	<- 81.28
 ulim	<- 1500
 cvlm	<- 0.1
-PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm, bin=bin)
-
+PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm)
 
 
 # Sex specific parameters (female, male).
@@ -76,28 +83,67 @@ b		<- rep(3.24, 2)				# length-weight allometry (CLark 1992)
 # Default parameters
 linf    <- c(151.568,  99.3607)		# From 2011 Length_age data
 k		<- c(0.0820581, 0.135409)   # Fron 2011 Length_age data
-t0      <- rep(0, 2)
+to      <- rep(0, 2)
 pp      <- rep(1, 2)
 CVlinf  <- c(0.1, 0.1)				# CV in the asymptotic length
 
-# Get growth parameters by regArea
-ii <- match(regArea, RA)
-linf <- GM$linf[, ii]
-k    <- GM$vbk[, ii]
-t0   <- GM$to[, ii]
-pp   <- GM$p[, ii]
+# Assesemble Regulatory area LIST OBJECT
+.getRegPars <- function(regArea)
+{
+	# Get growth parameters by regArea
+	ii <- match(regArea, RA)
+	linf <- GM$linf[, ii]
+	k    <- GM$vbk[, ii]
+	to   <- GM$to[, ii]
+	pp   <- GM$p[, ii]
          
 
-PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, t0=t0, pp=pp, CVlinf=CVlinf)
-rownames(PHI)=c("Female", "Male")
+	PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, to=to, pp=pp, CVlinf=CVlinf)
+	rownames(PHI)=c("Female", "Male")
 
-T1 <- c(THETA, PHI, PI)
+	T1 <- c(THETA, PHI, PI)	
+	return(T1)
+}
+RegArea <- lapply(sa, .getRegPars)
 
 # Halibut prices (10-20) (20-40) (40+)
 # $6.75  $7.30  $7.50  In Homer Alaska.
-fe		<- seq(0, 0.6, b=0.01)
 
 
+.calcLifeTable <- function(RegArea)
+{
+	# Append to RegArea list object the following arrays:
+	# survivorship     (lx)
+	# length-at-age    (la)
+	# weight-at-age    (wa)
+	# fecundity-at-age (fa)
+	# 
+	
+	with(RegArea, {
+		lx	<- array(0, dim)
+		la	<- array(0, dim)
+		wa	<- array(0, dim)
+		fa	<- array(0, dim)
+		ma  <- plogis(age, a50, k50)
+		for(i in 1:S)
+		{
+			# Survivorship
+			lx[,,i]  <- exp(-m[i])^(age-1)
+			lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
+			
+			# Length-at-age
+			dev      <- linf[i]*CVlinf[i]
+			linf.g   <- seq(linf[i]-dev, linf[i]+dev, length=G)
+			la[,,i]  <- sapply(linf.g,gvonb,t=age,vbk=k[i],to=to[i],p=pp[i])
+		}
+		
+		
+		RegArea$lx = lx
+		RegArea$la = la
+		return(RegArea)
+	})
+	
+}
 
 
 lifeh	<-
