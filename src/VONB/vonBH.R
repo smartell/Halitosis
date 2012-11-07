@@ -43,6 +43,7 @@ p1 <- p
  ggsave(p1, file="../../FIGS/fig:lengthAgeFit.pdf")
 
 p  <- ggplot(DF, aes(age, fl, col=area)) +geom_point(size=1)
+p  <- p + theme(axis.title = element_text(size = rel(2)))
 p  <- p + geom_line(aes(age, fl_hat, col=area), size=1) + facet_wrap(~sex)
 p  <- p + labs(col="Regulatory\nArea") + xlab("Age (years)") + ylab("Fork length (cm)")
 p2 <- p
