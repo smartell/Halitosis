@@ -34,6 +34,7 @@
    require(ggplot2)
    require(reshape2)
    require(Riscam)
+   require(grid)            #arrow function
    source("GvonBGrowth.R")  #gvonb function
    source("Selex.R")		#calcPage function
 
@@ -49,7 +50,7 @@
    age	<- 1:A					# vector of ages
    pg	<- dnorm(seq(-3, 3, length=G), 0, 1); 
    pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
-   fe  <- seq(0, 1.6, b=0.005) 	#sequence of fishing mortality rates.
+   fe  <- seq(0, 0.9, b=0.01) 	#sequence of fishing mortality rates.
 
 # |---------------------------------------------------------------------------|
 # | Growth parameter estimates from vonBH
@@ -118,7 +119,8 @@
 # |---------------------------------------------------------------------------|
 # | Calculate survivorship, growth and fecundity (unfished)         
 # |---------------------------------------------------------------------------|
-# |
+# | For the length-at-age calculation, use the mean growth curve,  then 
+# | base deviates from the mean length-at-age,  not linf as in the Pine paper.
 .calcLifeTable <- function(RegArea)
 {
 	# Append to RegArea list object the following arrays:
@@ -142,10 +144,18 @@
 			lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
 			
 			# Length-at-age
-			dev        <- linf[i]*CVlinf[i]
-			linf.g     <- seq(linf[i]-dev, linf[i]+dev, length=G)
-			la[,,i]    <- sapply(linf.g,gvonb,t=age,vbk=k[i],to=to[i],p=pp[i])
-			sd_la[,,i] <- sqrt(1/G*(CVlinf[i]*la[,,i])^2)
+			mu         <- gvonb(age, linf[i], k[i], to[i], pp[i])
+			sigma      <- CVlinf[i]*mu
+			dev        <- seq(-1.96, 1.96, length=G)
+			if(G==1) dev <- 0
+			
+			#dev        <- linf[i]*CVlinf[i]
+			#linf.g     <- seq(linf[i]-dev, linf[i]+dev, length=G)
+			#la[,,i]    <- sapply(linf.g,gvonb,t=age,vbk=k[i],to=to[i],p=pp[i])
+			#sd_la[,,i] <- sqrt(1/G*(CVlinf[i]*la[,,i])^2)
+			
+			la[,,i]    <- sapply(dev,fn<-function(dev){la=mu+dev*sigma})
+			sd_la[,,i] <- sqrt(1/G*(CVlinf[i]*mu)^2)
 			wa[,,i]    <- a[i]*la[,,i]^b[i]
 			fa[,,i]    <- ma*wa[,,i]
 		}
@@ -346,7 +356,7 @@
 		# | Find Fspr = 0.3
 		xx      <- RegArea[[i]]$equil$spr
 		yy      <- RegArea[[i]]$equil$fe
-		fspr.30 <- approx(xx,yy,0.3)$y
+		fspr.30 <- approx(xx,yy,0.3,yleft=0, yright=max(yy))$y
 		
 		# | Find F0.1
 		xx      <- RegArea[[i]]$equil$bpr
@@ -370,8 +380,26 @@
 # |
 plotSizeAtAge <- function(RegArea)
 {
-	# | Construct a dataframe with Area, Sex, G as id.vars and length-at-age
-	
+	# | Construct a dataframe with Area, Sex, G as id.vars and length-at-age.
+	# | 
+	n  <- length(RegArea)
+	df <- data.frame()
+	for(i in 1:n)
+	{
+		la.f <- t(RegArea[[i]]$la[,,1])
+		la.m <- t(RegArea[[i]]$la[,,2])
+		
+		mdf.f <- cbind(area=RegArea[[i]]$RA, sex="Female", melt(la.f))
+		mdf.m <- cbind(area=RegArea[[i]]$RA, sex="Male", melt(la.m))
+		
+		df <- rbind(df, rbind(mdf.f, mdf.m))
+	}
+	colnames(df) <- c("area","sex", "group", "age", "length")
+	p.la <- ggplot(df, aes(x=age, y=length))
+	p.la <- p.la + geom_line(aes(linetype=factor(group),col=sex),size=.2, alpha=0.5) 
+	p.la <- p.la + facet_wrap(~area)
+	print(p.la)
+	return(df)
 }
 
 # |---------------------------------------------------------------------------|
@@ -396,31 +424,51 @@ plotSizeAtAge <- function(RegArea)
 
 
 
-# |-----------------------------------------------------------------|
-# | Graphics                                                        |
-# |-----------------------------------------------------------------|
+# |---------------------------------------------------------------------------|
+# | Graphics                                                        	      |
+# |---------------------------------------------------------------------------|
 # | p.ypr = yield per recruit
 # | p.spr = spawning biomass depletion
 # | p.ye  = equilibrium yield
-
-# |-----------------------------------------------------------------|
-# | Yield per recruit                                               |
-# |-----------------------------------------------------------------|
+   RELSIZE <- 1.5
+   graphics.off()
+   quartz("Size at age", width=10, height=6)
+   
+# |---------------------------------------------------------------------------|
+# | Yield per recruit                                               
+# |---------------------------------------------------------------------------|
 p.ypr <- ggplot(DF, aes(x=fe, y=ypr)) + geom_line() 
 p.ypr <- p.ypr + labs(x="Fishing mortality rate", y="Yield per recruit (lb)")
+p.ypr <- p.ypr + geom_segment(aes(x=F0.1, y=1, xend=F0.1, yend=0), col="red" 
+         , arrow=arrow(length=unit(.2, "cm")), size=0.1)
+p.ypr <- p.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.ypr <- p.ypr + facet_wrap(~Area)
 
-# |-----------------------------------------------------------------|
-# | Spawning biomass depletion                                      |
-# |-----------------------------------------------------------------|
+
+# |---------------------------------------------------------------------------|
+# | Yield per recruit & current harvest policy.                                              
+# |---------------------------------------------------------------------------|
+
+f.ypr <- ggplot(DF, aes(x=fe, y=ypr)) + geom_line(aes(col=Area))
+f.ypr <- f.ypr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
+f.ypr <- f.ypr + labs(x="Fishing mortality rate", y="Yield per recruit (lb)")
+f.ypr <- f.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
+
+
+
+# |---------------------------------------------------------------------------|
+# | Spawning biomass depletion                                      
+# |---------------------------------------------------------------------------|
 p.spr <- ggplot(DF, aes(x=fe, y=spr)) + geom_line() 
 p.spr <- p.spr + labs(x="Fishing mortality rate", y="Spawning biomass depletion")
-p.spr <- p.spr + geom_segment(aes(x = Fspr.30, y = 0.30, xend = Fspr.30, yend = 0), col="red")
+p.spr <- p.spr + geom_segment(aes(x=Fspr.30, y=0.30, xend=Fspr.30, yend=0), col="red")
+p.spr <- p.spr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
+p.spr <- p.spr + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.spr <- p.spr + facet_wrap(~Area)
 
-# |-----------------------------------------------------------------|
-# | Equilibrium Yield                                               |
-# |-----------------------------------------------------------------|
+# |---------------------------------------------------------------------------|
+# | Equilibrium Yield                                               
+# |---------------------------------------------------------------------------|
 p.ye <- ggplot(DF, aes(x=fe, y=ye)) + geom_line() 
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + facet_wrap(~Area)

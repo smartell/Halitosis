@@ -391,7 +391,7 @@ REPORT_SECTION
 	{
 		for(int k=1;k<=narea; k++)
 		{
-			p(j,k)    = value(1.0/b(j,k));
+			p(j,k)    = value(   1.0/b(j,k));
 			vbk(j,k)  = value(-log(rho(j,k)));
 			double n1 = value(exp(vbk(j,k)*age_2)*pow(l2(j,k),b(j,k)) - exp(vbk(j,k)*age_1)*pow(l1(j,k),b(j,k)));
 			double d1 = exp(vbk(j,k)*age_2)-exp(vbk(j,k)*age_1);
