@@ -48,15 +48,16 @@
    S	<- 2					# number of sexes
    dim	<- c(A, G, S)			# array dimensions
    age	<- 1:A					# vector of ages
-   pg	<- dnorm(seq(-3, 3, length=G), 0, 1); 
+   pg	<- dnorm(seq(-1.96, 1.96, length=G), 0, 1); 
    pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
-   fe  <- seq(0, 0.9, b=0.01) 	#sequence of fishing mortality rates.
+   fe  <- seq(0, 1.5, b=0.01) 	#sequence of fishing mortality rates.
 
 # |---------------------------------------------------------------------------|
 # | Growth parameter estimates from vonBH
 # |---------------------------------------------------------------------------|
    GM  <- read.rep("../src/VONB/vonbh.rep")
    RA  <- c("2A","2B","2C","3A","3B","4A","4B","4C","4D")
+   HR  <- c(rep(0.215, 4), rep(0.161, 5))
    
 # |---------------------------------------------------------------------------|
 # | Commercial selectivities from Stewart 2012.                               
@@ -67,11 +68,19 @@
    		0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)
    ), nrow=8, ncol=2)
    
+
+   # THis is from the survey selectivity
+   SSelL <- matrix(
+	data=c(0,  0.285875,  0.579811,  0.822709,  1,  1.13862,  1.29717,  1.46621, 
+		0,  0.246216,  0.454654,  0.68445,  1,  1.29683,  1.58379,  1.86742)
+	, nrow=8, ncol=2)
+	
    CSelL <- t(t(CSelL)/apply(CSelL,2,max))
+   CSelL <- t(t(SSelL)/apply(SSelL,2,max))
    slim	<- 81.28
    ulim	<- 1500
    cvlm	<- 0.1
-   PI		<- data.frame(lhat=lhat, ghat=ghat, slim=slim, ulim=ulim, cvlm=cvlm)
+   
 # |---------------------------------------------------------------------------|
 
 
@@ -79,16 +88,17 @@
 # | Population parameters 
 # |---------------------------------------------------------------------------|
    bo		<- 100.0			# unfished female spawning biomass
-   h		<- 0.75				# steepness
+   h		<- 0.95				# steepness
    dm		<- 0.16				# discard mortality rate
-   THETA <- data.frame(bo=bo, h=h, dm=dm)
+   cm		<- 0				# Size-dependent natural mortality rate (-0.5, 0.5)
+   
    
 
 # |---------------------------------------------------------------------------|
 # | Assesemble Regulatory area LIST OBJECT                          
 # |---------------------------------------------------------------------------|
 # |
-.getRegPars <- function(regArea)
+.getRegPars <- function(regArea, THETA=THETA, PI=PI)
 {
 	# Sex specific parameters (female, male).
 	m		<- c(0.15, 0.1439)			# natural mortality rate
@@ -107,9 +117,12 @@
 	pp   <- GM$p[, ii]
 	cv   <- GM$cv[, ii]
          
+	THETA <- data.frame(bo=bo, h=h, dm=dm, cm=cm)
 
 	PHI	<- data.frame(m=m, a50=a50, k50=k50, a=a, b=b, linf=linf, k=k, to=to, pp=pp, CVlinf=cv)
-	rownames(PHI)=c("Female", "Male")
+	rownames(PHI) <- c("Female", "Male")
+	
+	PI  <- data.frame(slim=slim, ulim=ulim, cvlm=cvlm)
 
 	T1 <- c(RA=RA[ii], THETA, PHI, PI)	
 	return(T1)
@@ -131,17 +144,18 @@
 	# 
 	
 	with(RegArea, {
-		lx	   <- array(0, dim)
+		lx	   <- array(1, dim)
 		la	   <- array(0, dim)
 		sd_la  <- array(0, dim)
 		wa	   <- array(0, dim)
 		fa	   <- array(0, dim)
+		M      <- array(0, dim)
 		ma     <- plogis(age, a50, k50)
 		for(i in 1:S)
 		{
 			# Survivorship
-			lx[,,i]  <- exp(-m[i])^(age-1)
-			lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
+			#lx[,,i]  <- exp(-m[i])^(age-1)
+			#lx[A,,i] <- lx[A,,i]/(1-exp(-m[i]))
 			
 			# Length-at-age
 			mu         <- gvonb(age, linf[i], k[i], to[i], pp[i])
@@ -149,15 +163,24 @@
 			dev        <- seq(-1.96, 1.96, length=G)
 			if(G==1) dev <- 0
 			
-			#dev        <- linf[i]*CVlinf[i]
-			#linf.g     <- seq(linf[i]-dev, linf[i]+dev, length=G)
-			#la[,,i]    <- sapply(linf.g,gvonb,t=age,vbk=k[i],to=to[i],p=pp[i])
-			#sd_la[,,i] <- sqrt(1/G*(CVlinf[i]*la[,,i])^2)
 			
 			la[,,i]    <- sapply(dev,fn<-function(dev){la=mu+dev*sigma})
 			sd_la[,,i] <- sqrt(1/G*(CVlinf[i]*mu)^2)
 			wa[,,i]    <- a[i]*la[,,i]^b[i]
 			fa[,,i]    <- ma*wa[,,i]
+			
+			# Size dependent natural mortality rate 
+			# M_l = M (l_a/l_r)^c
+			l_r     <- 100
+			delta   <- (la[,,i]/l_r)^cm / mean((la[,,i]/l_r)^cm)
+			M[,,i]  <- m[i] * delta
+			
+			# Survivorship
+			for(j in 2:A)
+			{
+				lx[j,,i] <- lx[j-1,,i]*exp(-M[j-1,,i])
+			}
+			lx[A,,i] <- lx[A,,i]/(1-exp(-M[A,,i]))
 		}
 		
 		
@@ -167,6 +190,7 @@
 		RegArea$sd_la = sd_la
 		RegArea$wa    = wa
 		RegArea$fa    = fa
+		RegArea$M     = M
 		return(RegArea)
 	})
 	
@@ -197,12 +221,15 @@
 			sc[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pl,xl)
 			#sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)$y
 			
+			# retention proability
+			pr       <-  plogis(xl, slim, 0.1) - plogis(xl, ulim, 0.1)
+			sr[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pr,xl)
 			
-			sr[,,i]  <-  plogis(la[,,i],location=slim, scale=std) 
-					    - plogis(la[,,i],location=ulim, scale=std)
+			#sr[,,i]  <-  plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
 			sd[,,i]  <- 1-sr[,,i]
 			va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
 		}
+		
 		
 		RegArea$sc <- sc	# Length-based commercial selectivity.
 		RegArea$sr <- sr	# Age-specific retention probability.
@@ -251,6 +278,7 @@
 	# | 2. Calculate survivorship with fe>0.
 	# | 3. Calculate equilibrium recruitment (re) and biomass (be)
 	# | 4. Calculate yield per recruit,  spawning biomass per recruit,  yield, discards.
+	# | 5. Calculate average weight-at-age.
 	with(RegArea, {
 		# 1. Age-specific total mortality, survival, retention, and discard rate.
 		za	<- array(0, dim)
@@ -259,7 +287,7 @@
 		da	<- array(0, dim)
 		for(i in 1:S)
 		{
-			za[,,i]  <- m[i] + fe*va[,,i]
+			za[,,i]  <- M[,,i] + fe*va[,,i]
 			sa[,,i]  <- exp(-za[,,i])
 			qa[,,i]  <- (sc[,,i]*sr[,,i]) * (1-sa[,,i])/za[,,i]
 			da[,,i]  <- (sc[,,i]*sd[,,i]) * (1-sa[,,i])/za[,,i]
@@ -295,6 +323,7 @@
 		ye		<- 0
 		de		<- 0
 		ypr		<- 0
+		dpr     <- 0
 		bpr     <- 0
 		spr		<- phi.e/phi.E
 		for(i in 1:S)
@@ -303,16 +332,27 @@
 			de	<- de + sum( re * fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
 			bpr <- bpr + sum( t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
 			ypr <- ypr + sum( fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
+			dpr <- dpr + sum( fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
 		}
 		
-		RegArea$lz  <- lz
-		RegArea$re  <- re
-		RegArea$be  <- be
-		RegArea$ye  <- ye
-		RegArea$de  <- de
-		RegArea$bpr <- bpr
-		RegArea$ypr <- ypr
-		RegArea$spr <- spr
+		# 5. Calculate average weight-at-age
+		wbar <- matrix(0, nrow=S, ncol=A)
+		for(i in 1:S)
+		{
+			tmp      <- lz[,,i]/rowSums(lz[,,i])
+			wbar[i,] <- rowSums(wa[,,i]*tmp)
+		}
+		
+		RegArea$lz   <- lz
+		RegArea$re   <- re
+		RegArea$be   <- be
+		RegArea$ye   <- ye
+		RegArea$de   <- de
+		RegArea$bpr  <- bpr
+		RegArea$ypr  <- ypr
+		RegArea$spr  <- spr
+		RegArea$dpr  <- dpr
+		RegArea$wbar <- wbar
 		
 		return(RegArea)
 	})
@@ -323,7 +363,7 @@
 # |---------------------------------------------------------------------------|
 # | This function calls asem several times and constructs a data 
 # | frame with columns: fe ye be re de ypr spr
-.calcEquilibrium <- function(RegArea)
+.calcEquilibrium <- function(RegArea, Scenario=NULL)
 {
 	with(RegArea, {
 		# Proto-type function to get equilibrium vector.
@@ -331,7 +371,14 @@
 		{
 			tmp <- .asem(fe, RegArea)
 			out <- c(fe=fe, ye=tmp$ye, be=tmp$be, de=tmp$de, 
-				re=tmp$re, spr=tmp$spr, ypr=tmp$ypr, bpr=tmp$bpr)
+				re=tmp$re, spr=tmp$spr, ypr=tmp$ypr, 
+				bpr=tmp$bpr, dpr=tmp$dpr)
+				
+			# average weight arrays
+			wbar_f <- c(wbar=tmp$wbar[1,])
+			wbar_m <- c(wbar=tmp$wbar[2,])
+			
+			out <- c(out, wbar_f=wbar_f, wbar_m=wbar_m, Scenario=Scenario)
 			return(out)
 		}
 		
@@ -354,15 +401,27 @@
 	for(i in 1:n)
 	{
 		# | Find Fspr = 0.3
-		xx      <- RegArea[[i]]$equil$spr
-		yy      <- RegArea[[i]]$equil$fe
+		xx      <- as.double(RegArea[[i]]$equil$spr)
+		yy      <- as.double(RegArea[[i]]$equil$fe)
 		fspr.30 <- approx(xx,yy,0.3,yleft=0, yright=max(yy))$y
 		
 		# | Find F0.1
-		xx      <- RegArea[[i]]$equil$bpr
-		yy      <- RegArea[[i]]$equil$fe
+		xx      <- as.double(RegArea[[i]]$equil$bpr)
+		yy      <- as.double(RegArea[[i]]$equil$fe)
 		bpr0    <- 0.1*xx[1]
 		f0.1    <- approx(xx, yy, bpr0, yright=max(yy))$y
+		
+		# | Find Fmsy
+		yy      <- as.double(RegArea[[i]]$equil$ye)
+		ii      <- which.max(yy)
+		fmsy    <- as.double(RegArea[[i]]$equil$fe)[ii]
+		
+		u1 <- round(1-exp(-f0.1), 3)
+		u2 <- round(1-exp(-fspr.30), 3)
+		u3 <- round(1-exp(-fmsy), 3)
+		if(i==1)
+		cat("F0.1", "\t", "Fspr30", "\t", "Fmsy\n")
+		cat(u1, "\t", u2, "\t", u3, "\n")
 		
 		
 		tmp <- data.frame(Area  = RegArea[[i]]$RA, 
@@ -374,33 +433,6 @@
 	return(df)	
 }
 
-# |---------------------------------------------------------------------------|
-# | Plot size at age data
-# |---------------------------------------------------------------------------|
-# |
-plotSizeAtAge <- function(RegArea)
-{
-	# | Construct a dataframe with Area, Sex, G as id.vars and length-at-age.
-	# | 
-	n  <- length(RegArea)
-	df <- data.frame()
-	for(i in 1:n)
-	{
-		la.f <- t(RegArea[[i]]$la[,,1])
-		la.m <- t(RegArea[[i]]$la[,,2])
-		
-		mdf.f <- cbind(area=RegArea[[i]]$RA, sex="Female", melt(la.f))
-		mdf.m <- cbind(area=RegArea[[i]]$RA, sex="Male", melt(la.m))
-		
-		df <- rbind(df, rbind(mdf.f, mdf.m))
-	}
-	colnames(df) <- c("area","sex", "group", "age", "length")
-	p.la <- ggplot(df, aes(x=age, y=length))
-	p.la <- p.la + geom_line(aes(linetype=factor(group),col=sex),size=.2, alpha=0.5) 
-	p.la <- p.la + facet_wrap(~area)
-	print(p.la)
-	return(df)
-}
 
 # |---------------------------------------------------------------------------|
 # | Main function calls.                                                      |
@@ -412,12 +444,60 @@ plotSizeAtAge <- function(RegArea)
 # | 4. .calcSRR (Stock recruitment relationship)
 # | 5. .calcEquilibrium (data frame of values versus fe)
 # | 6. .makeDataFrame (object for ggplot)
+	DF      <- NULL
+	
+	h       <- 0.75
+	slim    <- 81.3
+	ulim    <- 15000
+	cm      <- 0
+	dm      <- 0.16
+	bin     <- seq(60, 130, by=10)
 	RegArea <- lapply(RA, .getRegPars)
 	RegArea <- lapply(RegArea, .calcLifeTable)
 	RegArea <- lapply(RegArea, .calcSelectivities)
 	RegArea <- lapply(RegArea, .calcSRR)
-	RegArea <- lapply(RegArea, .calcEquilibrium)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=1)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
 	DF      <- .makeDataFrame(RegArea)
+	
+	
+	slim    <- 81.3
+	ulim    <- 140
+	#cm      <- 0.5
+	#dm      <- 0
+	#bin     <- seq(50, 120, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=2)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF2      <- .makeDataFrame(RegArea)
+	
+	slim    <- 60
+	ulim    <- 140
+	#cm      <- -0.5
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=3)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF3      <- .makeDataFrame(RegArea)
+	
+	#h       <- 0.75
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=4)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF4      <- .makeDataFrame(RegArea)
+	
+	DF      <- rbind(DF, DF2, DF3, DF4)
+	
 # |
 # |---------------------------------------------------------------------------|
 # |---------------------------------------------------------------------------|
@@ -433,23 +513,66 @@ plotSizeAtAge <- function(RegArea)
    RELSIZE <- 1.5
    graphics.off()
    quartz("Size at age", width=10, height=6)
+
+# |---------------------------------------------------------------------------|
+# | Plot size at age data
+# |---------------------------------------------------------------------------|
+# |
+plotSizeAtAge <- function(RegArea)
+{
+	# | Construct a dataframe with Area, Sex, G as id.vars and length-at-age.
+	# | 
+	n  <- length(RegArea)
+	df <- data.frame()
+	for(i in 1:n)
+	{
+		la.f <- t(RegArea[[i]]$la[,,1])
+		la.m <- t(RegArea[[i]]$la[,,2])
+
+		mdf.f <- cbind(area=RegArea[[i]]$RA, sex="Female", melt(la.f))
+		mdf.m <- cbind(area=RegArea[[i]]$RA, sex="Male", melt(la.m))
+
+		df <- rbind(df, rbind(mdf.f, mdf.m))
+	}
+	colnames(df) <- c("area","sex", "group", "age", "length")
+	p.la <- ggplot(df, aes(x=age, y=length))
+	p.la <- p.la + geom_line(aes(linetype=factor(group),col=sex),size=.4, alpha=0.85) 
+	p.la <- p.la + facet_wrap(~area)
+	print(p.la)
+	return(df)
+}
+
    
 # |---------------------------------------------------------------------------|
 # | Yield per recruit                                               
 # |---------------------------------------------------------------------------|
-p.ypr <- ggplot(DF, aes(x=fe, y=ypr)) + geom_line() 
+p.ypr <- ggplot(subset(DF, Scenario==c(1,2,3))) + geom_line(aes(x=fe, y=ypr, col=factor(Scenario))) 
 p.ypr <- p.ypr + labs(x="Fishing mortality rate", y="Yield per recruit (lb)")
-p.ypr <- p.ypr + geom_segment(aes(x=F0.1, y=1, xend=F0.1, yend=0), col="red" 
+p.ypr <- p.ypr + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
+#p.ypr <- p.ypr + scale_colour_discrete(name="Scenario", labels=c("Constant M", "M increases with size","M decreases with size"))
+#p.ypr <- p.ypr + scale_colour_discrete(name="Scenario", labels=c("Discard mortality = 0.16", "Discard mortality = 0.00","Discard mortality = 1.00"))
+p.ypr <- p.ypr + geom_segment(aes(x=F0.1, y=1, xend=F0.1, yend=0), color="darkgrey"
          , arrow=arrow(length=unit(.2, "cm")), size=0.1)
+p.ypr <- p.ypr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
 p.ypr <- p.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.ypr <- p.ypr + facet_wrap(~Area)
 
 
 # |---------------------------------------------------------------------------|
+# | Discards per recruit                                               
+# |---------------------------------------------------------------------------|
+p.dpr <- ggplot(subset(DF, Scenario==c(1,2,3))) + geom_line(aes(x=fe, y=dpr, col=factor(Scenario))) 
+p.dpr <- p.dpr + labs(x="Fishing mortality rate", y="Discard per recruit (lb)")
+p.dpr <- p.dpr + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
+p.dpr <- p.dpr + theme(axis.title = element_text(size = rel(RELSIZE)))
+p.dpr <- p.dpr + facet_wrap(~Area)
+
+
+
+# |---------------------------------------------------------------------------|
 # | Yield per recruit & current harvest policy.                                              
 # |---------------------------------------------------------------------------|
-
-f.ypr <- ggplot(DF, aes(x=fe, y=ypr)) + geom_line(aes(col=Area))
+f.ypr <- ggplot(subset(DF, Scenario==c(1, 2, 3))) + geom_line(aes(x=fe, y=ypr, col=Area, linetype=factor(Scenario)))
 f.ypr <- f.ypr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
 f.ypr <- f.ypr + labs(x="Fishing mortality rate", y="Yield per recruit (lb)")
 f.ypr <- f.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
@@ -459,20 +582,63 @@ f.ypr <- f.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
 # |---------------------------------------------------------------------------|
 # | Spawning biomass depletion                                      
 # |---------------------------------------------------------------------------|
-p.spr <- ggplot(DF, aes(x=fe, y=spr)) + geom_line() 
+p.spr <- ggplot(subset(DF,Scenario==c(1, 2, 3)) ) + geom_line(aes(x=fe, y=spr, col=factor(Scenario))) 
 p.spr <- p.spr + labs(x="Fishing mortality rate", y="Spawning biomass depletion")
-p.spr <- p.spr + geom_segment(aes(x=Fspr.30, y=0.30, xend=Fspr.30, yend=0), col="red")
+p.spr <- p.spr + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
+#p.spr <- p.spr + scale_colour_discrete(name="Scenario", labels=c("Constant M", "M increases with size","M decreases with size"))
+#p.spr <- p.spr + scale_colour_discrete(name="Scenario", labels=c("Discard mortality = 0.16", "Discard mortality = 0.00","Discard mortality = 1.00"))
+p.spr <- p.spr + geom_segment(aes(x=Fspr.30, y=0.30, xend=Fspr.30, yend=0), col="red"
+         , arrow=arrow(length=unit(.2, "cm")), size=0.1)
 p.spr <- p.spr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
 p.spr <- p.spr + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.spr <- p.spr + facet_wrap(~Area)
 
+
+
 # |---------------------------------------------------------------------------|
 # | Equilibrium Yield                                               
 # |---------------------------------------------------------------------------|
-p.ye <- ggplot(DF, aes(x=fe, y=ye)) + geom_line() 
+p.ye <- ggplot(subset(DF,Scenario==c(1,2,3)) ) + geom_line(aes(x=fe, y=ye, col=factor(Scenario))) 
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2,  col=c(1, 2) )
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("h=0.95","h=0.75"))
+p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Discard mortality = 0.16", "Discard mortality = 0.00","Discard mortality = 1.00"))
+p.ye <- p.ye + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.ye <- p.ye + facet_wrap(~Area)
 
 
+# |---------------------------------------------------------------------------|
+# | Mean weight-at-age vs F  for females                                             
+# |---------------------------------------------------------------------------|
+   iage        <- seq(6, 20, by=2)
+   nm          <- colnames(DF)
+   wbar_f_cols <- nm %in% grep("^wbar_f",nm,value=TRUE)
+   sDF         <- cbind(Area=DF$Area, fe=DF$fe, sex="Female", DF[,wbar_f_cols])
+   colnames(sDF) <- c("Area", "fe", "sex", paste(1:A) )
+   icol          <- c(1, 2, 3, match(iage, names(sDF)))
+   mDF           <- melt(sDF[icol],id.vars=c("Area","fe","sex"))
 
+   p.wbar_f <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()
+   p.wbar_f <- p.wbar_f + labs(x="Fishing mortality rate", y="Mean weight-at-age (lb)")
+   p.wbar_f <- p.wbar_f + theme(axis.title = element_text(size = rel(RELSIZE)))
+   p.wbar_f <- p.wbar_f + labs(color="Age")
+   p.wbar_f <- p.wbar_f + facet_wrap(~Area)
+
+
+# |---------------------------------------------------------------------------|
+# | Mean weight-at-age vs F  for males                                             
+# |---------------------------------------------------------------------------|
+   nm          <- colnames(DF)
+   wbar_m_cols <- nm %in% grep("^wbar_m",nm,value=TRUE)
+   sDF         <- cbind(Area=DF$Area, fe=DF$fe, sex="Male", DF[,wbar_m_cols])
+   colnames(sDF) <- c("Area", "fe", "sex", paste(1:A) )
+   icol          <- c(1, 2, 3, match(iage, names(sDF)))
+   mDF           <- melt(sDF[icol],id.vars=c("Area","fe","sex"))
+
+   p.wbar_m <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()
+   p.wbar_m <- p.wbar_m + labs(x="Fishing mortality rate", y="Mean weight-at-age (lb)")
+   p.wbar_m <- p.wbar_m + theme(axis.title = element_text(size = rel(RELSIZE)))
+   p.wbar_m <- p.wbar_m + labs(color="Age")
+   p.wbar_m <- p.wbar_m + facet_wrap(~Area)
 
