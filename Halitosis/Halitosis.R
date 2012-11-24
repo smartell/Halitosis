@@ -21,10 +21,11 @@
 #
 # SCENARIOS FOR HALIBUT PAPER
 # 1) Status quo. 83.3cm minimum size limit
-# 2) No size limits
-# 3) 70cm minimum size limit
-# 4) slot limit 81.3-150 cm
-# 5) slot limit 70-150 cm
+# 2) Maximum size limit of 140 cm
+# 3) No size limits
+# 4) Selectivity shift to smaller fish (-10cm)
+# 5) Bycatch fishing mortality rates from 0.02 to 0.153
+# 6) Size-specific natural mortality rates.
 # -------------------------------------------------------------------------- ##
 
 # |---------------------------------------------------------------------------|
@@ -37,6 +38,7 @@
    require(grid)            #arrow function
    source("GvonBGrowth.R")  #gvonb function
    source("Selex.R")		#calcPage function
+   source("IPHC_theme.R")
 
 
 # |---------------------------------------------------------------------------|
@@ -50,7 +52,7 @@
    age	<- 1:A					# vector of ages
    pg	<- dnorm(seq(-1.96, 1.96, length=G), 0, 1); 
    pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
-   fe  <- seq(0, 1.5, b=0.01) 	#sequence of fishing mortality rates.
+   fe  <- seq(0, 1.00, b=0.01) 	#sequence of fishing mortality rates.
 
 # |---------------------------------------------------------------------------|
 # | Growth parameter estimates from vonBH
@@ -75,8 +77,10 @@
 		0,  0.246216,  0.454654,  0.68445,  1,  1.29683,  1.58379,  1.86742)
 	, nrow=8, ncol=2)
 	
-   CSelL <- t(t(CSelL)/apply(CSelL,2,max))
-   CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+   #CSelL <- t(t(CSelL)/apply(CSelL,2,max))
+   #CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+   CSelL <- CSelL/max(CSelL)
+   CSelL <- SSelL/max(SSelL)
    slim	<- 81.28
    ulim	<- 1500
    cvlm	<- 0.1
@@ -214,6 +218,7 @@
 		sr	<- array(0, dim)
 		sd	<- array(0, dim)
 		va	<- array(0, dim)
+		vd	<- array(0, dim)  #discard fishery
 		std	<- cvlm*slim+1.e-30	
 		for(i in 1:S)
 		{
@@ -228,6 +233,10 @@
 			#sr[,,i]  <-  plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
 			sd[,,i]  <- 1-sr[,,i]
 			va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
+			
+			# discard fishery selecitvity
+			pd       <- plogis(xl, 66,  0.1) - plogis(xl, 81.3, 0.1)
+			vd[,,i]  <- .calcPage(la[,,i],sd_la[,,i], pd, xl)
 		}
 		
 		
@@ -235,6 +244,7 @@
 		RegArea$sr <- sr	# Age-specific retention probability.
 		RegArea$sd <- sd	# Age-specific discard probability.
 		RegArea$va <- va	# Joint capture probability.
+		RegArea$vd <- vd	# Discard probability in trawl fishery.
 		
 		return(RegArea)
 	})
@@ -271,7 +281,7 @@
 # | Age-structure equilibrium model asem                            
 # |---------------------------------------------------------------------------|
 # | fe is the equilibrium fishing mortality rate.
-.asem <- function(fe=0, RegArea)
+.asem <- function(fe=0, RegArea, ct=0)
 {
 	# | Psuedocode:
 	# | 1. Calculate age-specific total mortality, retention, and discard rates
@@ -285,9 +295,16 @@
 		sa	<- array(0, dim)
 		qa	<- array(0, dim)
 		da	<- array(0, dim)
+		
+		bycatch <- ct
+		bapprox <- bo * 0.15/(0.15+fe)
+		fd      <- bycatch/bapprox
+		#if(ct>0)
+		#cat("fe = ", fe, " fd = ", fd, "\n")
+		
 		for(i in 1:S)
 		{
-			za[,,i]  <- M[,,i] + fe*va[,,i]
+			za[,,i]  <- M[,,i] + fe*va[,,i] + fd*vd[,,i]
 			sa[,,i]  <- exp(-za[,,i])
 			qa[,,i]  <- (sc[,,i]*sr[,,i]) * (1-sa[,,i])/za[,,i]
 			da[,,i]  <- (sc[,,i]*sd[,,i]) * (1-sa[,,i])/za[,,i]
@@ -363,13 +380,13 @@
 # |---------------------------------------------------------------------------|
 # | This function calls asem several times and constructs a data 
 # | frame with columns: fe ye be re de ypr spr
-.calcEquilibrium <- function(RegArea, Scenario=NULL)
+.calcEquilibrium <- function(RegArea, Scenario=NULL, bycatch=0)
 {
 	with(RegArea, {
 		# Proto-type function to get equilibrium vector.
 		fn <- function(fe)
 		{
-			tmp <- .asem(fe, RegArea)
+			tmp <- .asem(fe, RegArea, bycatch)
 			out <- c(fe=fe, ye=tmp$ye, be=tmp$be, de=tmp$de, 
 				re=tmp$re, spr=tmp$spr, ypr=tmp$ypr, 
 				bpr=tmp$bpr, dpr=tmp$dpr)
@@ -415,18 +432,21 @@
 		yy      <- as.double(RegArea[[i]]$equil$ye)
 		ii      <- which.max(yy)
 		fmsy    <- as.double(RegArea[[i]]$equil$fe)[ii]
+		msy     <- as.double(RegArea[[i]]$equil$ye)[ii]
 		
 		u1 <- round(1-exp(-f0.1), 3)
 		u2 <- round(1-exp(-fspr.30), 3)
 		u3 <- round(1-exp(-fmsy), 3)
 		if(i==1)
-		cat("F0.1", "\t", "Fspr30", "\t", "Fmsy\n")
-		cat(u1, "\t", u2, "\t", u3, "\n")
+		cat( "\t", "Fspr30", "\t", "Umsy\n")
+		cat( "\t", u2, "\t", u3, "\n")
 		
 		
 		tmp <- data.frame(Area  = RegArea[[i]]$RA, 
 						Fspr.30 = fspr.30,
 						F0.1    = f0.1,  
+						Fmsy    = fmsy, 
+						msy     = msy, 
 						RegArea[[i]]$equil)
 		df  <- rbind(df, tmp)
 	}
@@ -474,8 +494,8 @@
 	#RegArea <- lapply(RegArea, .asem, fe=0)
 	DF2      <- .makeDataFrame(RegArea)
 	
-	slim    <- 60
-	ulim    <- 140
+	slim    <- 0
+	ulim    <- 1500
 	#cm      <- -0.5
 	#dm      <- 1.0
 	#bin     <- seq(70, 140, by=10)
@@ -487,7 +507,12 @@
 	#RegArea <- lapply(RegArea, .asem, fe=0)
 	DF3      <- .makeDataFrame(RegArea)
 	
-	#h       <- 0.75
+	h       <- 0.75
+	slim    <- 81.3
+	ulim    <- 15000
+	cm      <- 0
+	dm      <- 0.16
+	bin     <- seq(50, 120, by=10)
 	RegArea <- lapply(RA, .getRegPars)
 	RegArea <- lapply(RegArea, .calcLifeTable)
 	RegArea <- lapply(RegArea, .calcSelectivities)
@@ -496,7 +521,36 @@
 	#RegArea <- lapply(RegArea, .asem, fe=0)
 	DF4      <- .makeDataFrame(RegArea)
 	
-	DF      <- rbind(DF, DF2, DF3, DF4)
+	#CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+	#slim    <- 60
+	#ulim    <- 140
+	#cm      <- -0.5
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=5, bycatch=2)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF5      <- .makeDataFrame(RegArea)
+	
+	#CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+	#slim    <- 60
+	#ulim    <- 140
+	cm      <- -0.5
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=6, bycatch=0)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF6      <- .makeDataFrame(RegArea)
+	
+	
+	DF      <- rbind(DF, DF2, DF3, DF4, DF5, DF6)
 	
 # |
 # |---------------------------------------------------------------------------|
@@ -512,7 +566,7 @@
 # | p.ye  = equilibrium yield
    RELSIZE <- 1.5
    graphics.off()
-   quartz("Size at age", width=10, height=6)
+   quartz("Size at age", width=11, height=6.5)
 
 # |---------------------------------------------------------------------------|
 # | Plot size at age data
@@ -572,8 +626,8 @@ p.dpr <- p.dpr + facet_wrap(~Area)
 # |---------------------------------------------------------------------------|
 # | Yield per recruit & current harvest policy.                                              
 # |---------------------------------------------------------------------------|
-f.ypr <- ggplot(subset(DF, Scenario==c(1, 2, 3))) + geom_line(aes(x=fe, y=ypr, col=Area, linetype=factor(Scenario)))
-f.ypr <- f.ypr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2 )
+f.ypr <- ggplot(subset(DF, Scenario==c(1))) + geom_line(aes(x=fe, y=ypr, col=Area), size=1.5)
+f.ypr <- f.ypr + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=1 )
 f.ypr <- f.ypr + labs(x="Fishing mortality rate", y="Yield per recruit (lb)")
 f.ypr <- f.ypr + theme(axis.title = element_text(size = rel(RELSIZE)))
 
@@ -598,15 +652,55 @@ p.spr <- p.spr + facet_wrap(~Area)
 # |---------------------------------------------------------------------------|
 # | Equilibrium Yield                                               
 # |---------------------------------------------------------------------------|
-p.ye <- ggplot(subset(DF,Scenario==c(1,2,3)) ) + geom_line(aes(x=fe, y=ye, col=factor(Scenario))) 
-p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
-p.ye <- p.ye + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2,  col=c(1, 2) )
-#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("h=0.95","h=0.75"))
-p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
-#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Discard mortality = 0.16", "Discard mortality = 0.00","Discard mortality = 1.00"))
-p.ye <- p.ye + theme(axis.title = element_text(size = rel(RELSIZE)))
-p.ye <- p.ye + facet_wrap(~Area)
+p.ye <- ggplot(subset(subset(DF, Scenario==1), Area=="2B")) + geom_line(aes(x=fe, y=ye), size=1.5)
+p.ye <- p.ye + labs(x="Fishing Mortality Rate", y="Equilibrium Yield") + ylim(c(0, 10))
+p.ye2B <- p.ye
 
+sDF  <- subset(DF, Scenario==1)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye1 <- p.ye
+
+
+sDF  <- subset(DF, Scenario==2)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye2 <- p.ye
+
+sDF  <- subset(DF, Scenario==3)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye3 <- p.ye
+
+sDF  <- subset(DF, Scenario==4)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye4 <- p.ye 
+
+sDF  <- subset(DF, Scenario==5)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye5 <- p.ye 
+
+sDF  <- subset(DF, Scenario==6)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye6 <- p.ye 
+
+#p.ye <- p.ye + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2,  col=c(1, 2) )
+#p.ye <- p.ye #+ facet_wrap(~Scenario) 
+
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("h=0.95","h=0.75"))
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Commercial Selectivity", "Survey Selectivity"))
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Status quo", "81.3–140 cm SL","60–140 cm SL"))
+#p.ye <- p.ye + scale_colour_discrete(name="Scenario", labels=c("Discard mortality = 0.16", "Discard mortality = 0.00","Discard mortality = 1.00"))
+#p.ye <- p.ye + theme(axis.text.x = element_text(size = 2))
 
 # |---------------------------------------------------------------------------|
 # | Mean weight-at-age vs F  for females                                             
@@ -639,6 +733,6 @@ p.ye <- p.ye + facet_wrap(~Area)
    p.wbar_m <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()
    p.wbar_m <- p.wbar_m + labs(x="Fishing mortality rate", y="Mean weight-at-age (lb)")
    p.wbar_m <- p.wbar_m + theme(axis.title = element_text(size = rel(RELSIZE)))
-   p.wbar_m <- p.wbar_m + labs(color="Age")
-   p.wbar_m <- p.wbar_m + facet_wrap(~Area)
+   p.wbar_m <- p.wbar_m + labs(color="Age") 
+   p.wbar_m <- p.wbar_m + facet_wrap(~Area) 
 
