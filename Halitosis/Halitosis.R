@@ -52,7 +52,7 @@
    age	<- 1:A					# vector of ages
    pg	<- dnorm(seq(-1.96, 1.96, length=G), 0, 1); 
    pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
-   fe  <- seq(0, 1.00, b=0.01) 	#sequence of fishing mortality rates.
+   fe  <- seq(0, 1.00, b=0.0051) 	#sequence of fishing mortality rates.
 
 # |---------------------------------------------------------------------------|
 # | Growth parameter estimates from vonBH
@@ -549,13 +549,81 @@
 	#RegArea <- lapply(RegArea, .asem, fe=0)
 	DF6      <- .makeDataFrame(RegArea)
 	
+	#CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+	#slim    <- 60
+	#ulim    <- 140
+	cm      <-  0.5
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=7, bycatch=0)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF7      <- .makeDataFrame(RegArea)
 	
-	DF      <- rbind(DF, DF2, DF3, DF4, DF5, DF6)
+	
+	#CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+	#slim    <- 60
+	#ulim    <- 140
+	cm      <- 0
+	h       <- 0.85
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=8, bycatch=0)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF8      <- .makeDataFrame(RegArea)
+	
+	#CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+	#slim    <- 60
+	#ulim    <- 140
+	cm      <- 0
+	h       <- 0.65
+	#dm      <- 1.0
+	#bin     <- seq(70, 140, by=10)
+	RegArea <- lapply(RA, .getRegPars)
+	RegArea <- lapply(RegArea, .calcLifeTable)
+	RegArea <- lapply(RegArea, .calcSelectivities)
+	RegArea <- lapply(RegArea, .calcSRR)
+	RegArea <- lapply(RegArea, .calcEquilibrium, Scenario=9, bycatch=0)
+	#RegArea <- lapply(RegArea, .asem, fe=0)
+	DF9      <- .makeDataFrame(RegArea)
+	
+	
+	DF      <- rbind(DF, DF2, DF3, DF4, DF5, DF6, DF7, DF8, DF9)
 	
 # |
 # |---------------------------------------------------------------------------|
 # |---------------------------------------------------------------------------|
 
+
+# | FMSY table
+ss <- unique(DF$Scenario)
+Fmsy <- NULL
+MSY  <- NULL
+Bmsy <- NULL
+for(i in ss)
+{
+	tmp = subset(DF, Scenario==i)
+	ff <- NULL
+	mm <- NULL
+	bb <- NULL
+	for(j in RA)
+	{
+		tmp2 = subset(tmp, Area==j)
+		ff   = c(ff, unique(tmp2$Fmsy))
+		mm   = c(mm, tmp2$ye[which.max(tmp2$ye)])
+		bb   = c(bb, tmp2$be[which.max(tmp2$ye)])
+	}
+	Fmsy <- rbind(Fmsy, ff)
+	MSY  <- rbind(MSY, mm)
+	Bmsy <- rbind(Bmsy, bb)
+}
 
 
 # |---------------------------------------------------------------------------|
@@ -566,7 +634,7 @@
 # | p.ye  = equilibrium yield
    RELSIZE <- 1.5
    graphics.off()
-   quartz("Size at age", width=11, height=6.5)
+   quartz("Size at age", width=8.25, height=7)
 
 # |---------------------------------------------------------------------------|
 # | Plot size at age data
@@ -655,43 +723,82 @@ p.spr <- p.spr + facet_wrap(~Area)
 p.ye <- ggplot(subset(subset(DF, Scenario==1), Area=="2B")) + geom_line(aes(x=fe, y=ye), size=1.5)
 p.ye <- p.ye + labs(x="Fishing Mortality Rate", y="Equilibrium Yield") + ylim(c(0, 10))
 p.ye2B <- p.ye
+SIZE <- 1.00
 
 sDF  <- subset(DF, Scenario==1)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye1 <- p.ye
+ggsave(p.ye1, file="../FIGS/fig:YeBase.pdf")
 
 
 sDF  <- subset(DF, Scenario==2)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye2 <- p.ye
 
 sDF  <- subset(DF, Scenario==3)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye3 <- p.ye
 
 sDF  <- subset(DF, Scenario==4)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye4 <- p.ye 
 
 sDF  <- subset(DF, Scenario==5)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye5 <- p.ye 
 
 sDF  <- subset(DF, Scenario==6)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=1.25) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye6 <- p.ye 
+
+sDF  <- subset(DF, Scenario==7)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye7 <- p.ye 
+
+sDF  <- subset(DF, Scenario==8)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye8 <- p.ye
+
+sDF  <- subset(DF, Scenario==9)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye9 <- p.ye
+
+
+
+p.ye <- ggplot(DF ) + geom_line(aes(x=fe, y=ye, col=Area), size=0.5) + ylim(c(0, 10))
+#p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.yeAll <- p.ye + facet_wrap(~Scenario)
+ggsave(p.yeAll, file="../FIGS/fig:YeALL.pdf")
+
 
 #p.ye <- p.ye + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2,  col=c(1, 2) )
 #p.ye <- p.ye #+ facet_wrap(~Scenario) 

@@ -47,6 +47,7 @@ p  <- ggplot(DF, aes(age, fl, col=area)) +geom_point(size=1.25)
 p  <- p + geom_line(aes(age, fl_hat, col=area), size=1.25) + facet_wrap(~sex)
 p  <- p + labs(col="Regulatory\nArea") + xlab("Age (years)") + ylab("Fork length (cm)")
 p2 <- p
+ggsave(p2, file="../../FIGS/fig:lengthAgeFitbySex.pdf")
 
 p  <- ggplot(DF, aes(factor(age), epsilon, col=sex))+geom_boxplot(outlier.size = 0.2)
 p  <- p + facet_wrap(~area) + labs(col="Sex")+xlab("Age (years)")+ylab("Residual fork length (cm)")
@@ -119,6 +120,8 @@ colnames(S)<-c("Year","Sex",paste(1:30))
 mdf <- melt(S, id.vars=c("Year","Sex"))
 colnames(mdf)<-c("Year","Sex","Age","value")
 
-ggplot(mdf)+geom_line(aes(x=Age,y=value,group=Year,col=factor(Year)), size=1.25) + facet_wrap(~Sex)+labs(x="Age",y="Selectivity",col="Year") + theme_bw(18) + theme(axis.text.x=element_text(size=rel(.5)))
+age_breaks = seq(5, 30, by=5)
+
+ggplot(mdf)+geom_line(aes(x=Age,y=value,group=Year,col=factor(Year)), size=1.25) +labs(x="Age",y="Selectivity",col="Year") + facet_wrap(~Sex)+ theme_bw(18)+ scale_x_discrete(breaks=age_breaks)
 
 ggplot(subset(mdf, Year==2011))+geom_line(aes(x=Age,y=value,group=Sex, col=Sex), size=1.25) +labs(x="Age",y="Selectivity",col="Sex") + theme_bw(18) + theme(axis.text.x=element_text(size=rel(0.5)))+opts(legend.position="top")
