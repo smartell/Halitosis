@@ -120,6 +120,12 @@ PROCEDURE_SECTION
 	if(mceval_phase())
 		mcmcReport();
 	
+	
+	
+	int nvar;
+	nvar = initial_params::nvarcalc();
+	cout<<nvar<<endl;
+	
 FUNCTION vonb_model
 	// i = observation
 	// j = sex

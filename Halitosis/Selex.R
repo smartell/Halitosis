@@ -29,3 +29,16 @@
 	return(va)
 }
 
+.calcALK <- function(la, sa, xl)
+{
+	A   <- length(la)
+	L   <- length(xl)
+	hbw <- 0.5*(xl[2] - xl[1])
+	ALK <- matrix(0, nrow=L, ncol=A)
+	
+	ALK <-  sapply(xl+hbw,pnorm,mean=la,sd=sa) - sapply(xl-hbw,pnorm,mean=la,sd=sa)
+	
+	return(ALK)
+}
+
+

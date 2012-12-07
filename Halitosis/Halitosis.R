@@ -601,8 +601,10 @@
 # |---------------------------------------------------------------------------|
 # |---------------------------------------------------------------------------|
 
-
-# | FMSY table
+# |---------------------------------------------------------------------------|
+# | FMSY,  MSY,  BMSY table
+# |---------------------------------------------------------------------------|
+# |
 ss <- unique(DF$Scenario)
 Fmsy <- NULL
 MSY  <- NULL
@@ -689,6 +691,14 @@ p.dpr <- p.dpr + scale_colour_discrete(name="Scenario", labels=c("Status quo", "
 p.dpr <- p.dpr + theme(axis.title = element_text(size = rel(RELSIZE)))
 p.dpr <- p.dpr + facet_wrap(~Area)
 
+
+# |---------------------------------------------------------------------------|
+# | Percent wastage versus fishing mortality
+# |---------------------------------------------------------------------------|
+p.de  <- ggplot(subset(DF, Scenario==c(1, 2, 4))) + geom_line(aes(x=fe, y=de/ye, col=factor(Scenario)))#+ ylim(c(0, 1))
+p.de  <- p.de + labs(x="Fishing mortality rate", y="Percent wastage (dead discards/landed catch)", col="Scenario")
+p.de  <- p.de + facet_wrap(~Area)
+ggsave(p.de, file="../FIGS/fig:PercentWastage.pdf")
 
 
 # |---------------------------------------------------------------------------|

@@ -4,18 +4,17 @@
 
 \subsection*{Equilibrium model} % (fold)
 \label{sub:equilibrium_model}
-
-For ease of describing the age-structure equilibrium model I ignore the cumulative effects of size-selective fishing and size limits at this time. In an equilibrium setting, the annual yield is actually a sum over all ages of the fraction of individuals that die due to fishing multiplied by the total number or biomass of individuals available for harvest.  Thus the equilibrium yield equation, assuming both natural and fishing mortality occur simultaneously,  can be written as:
+At equilibrium the annual yield is calculated as the sum over ages of the fraction of individuals that die due to fishing multiplied by the total number or biomass of individuals available for harvest.  Thus the equilibrium yield equation, assuming both natural and fishing mortality occur simultaneously,  can be written as:
 \begin{equation}\label{eq:Y_e}
 	Y_e = \sum_{a=1}^\infty \frac{B_a F_a [1-\exp(-M_a-F_a)]}{M+F_a}
 \end{equation}
-where $F_a$ is the age-specific fishing mortality rate which can be parsed as $F_e v_a$, where $v_a$ is the age-specific fraction that is vulnerable to fishing mortality (also termed selectivity in models that do not distinguish between landed and discarded fish).  It is common to use a simple parametric function (i.e., a logistic curve) to describe age-specific selectivities.  In this application we use the same length-based coefficients that are internally estimated in the stock assessment model and convert these coefficients into age-based selectivities based on the mean length-at-age and the coefficient of variation in the mean length-at-age.  Biomass at age ($B_a$) is defined as the numbers-at-age ($N_a$) times the average weight-at-age ($w_a$).  Assuming steady-state conditions this can be expressed as the product of recruitment, survivorship and average weight-at-age.  Assuming unfished conditions (i.e., $F_e=0$), survivorship to a given age is given by the following recursive equation:
+where $F_a$ is the age-specific fishing mortality rate which can be parsed as $F_e v_a$, where $v_a$ is the age-specific fraction that is vulnerable to fishing mortality (also termed selectivity in models that do not distinguish between landed and discarded fish).  It is common to use a simple parametric function (i.e., a logistic curve) to describe age-specific selectivities.  For this application we use the same length-based coefficients that are internally estimated in the stock assessment model and convert these coefficients into age-based selectivities based on the mean length-at-age and the coefficient of variation in the mean length-at-age.  Biomass at age ($B_a$) is defined as the numbers-at-age ($N_a$) times the average weight-at-age ($w_a$).  Assuming steady-state conditions, this can be expressed as the product of recruitment, survivorship, and the average weight-at-age.  Assuming unfished conditions (i.e., $F_e=0$), survivorship to a given age is given by the following recursive equation and natural mortality rate $M$:
 \begin{equation}\label{eq:unfished_survivorship}
-	l_a =\begin{cases} 1, & a=1 \\ l_{a-1} \exp(-M_a), &a>1\end{cases}, 
+	l_a = 1,  \mbox{for $a$=1 and} \quad l_{a-1} \exp(-M_a),  \mbox{for $a>1$}
 \end{equation}
 and survivorship under fished conditions ($F_e > 0$) is given by:
 \begin{equation}\label{eq:fished_survivorship}
-	\acute{l}_a =\begin{cases} 1, & a=1 \\ \acute{l}_{a-1} \exp(-M_a-F_e v_a), &a>1\end{cases}, 
+	\acute{l}_a =1, \mbox{for $a$=1 and} \quad \acute{l}_{a-1} \exp(-M_a-F_e v_a), \mbox{for $a>1$}. 
 \end{equation}
 The age-specific biomass is given as:
 \begin{equation} \label{eq:B_a}
@@ -35,11 +34,13 @@ For a given equilibrium fishing mortality rate $F_e$, the equilibrium recruitmen
 \begin{equation}\label{eq:R_e}
 	R_e = \frac{R_o (\kappa-\phi_e/\phi_f)}{\kappa -1} 
 \end{equation}
-	where the spawning biomass per recruit $\phi_e$ and $\phi_f$ for unfished and fished conditions, respectively, is based on the survivorship and mature female weight-at-age,  or fecundity-at-age ($f_a$).  Two leading parameters are the unfished age-1 recruits $R_o$, which serves the purpose of providing the overall population scale, and the recruitment compensation parameter $\kappa$ which is defined as the relative improvement in juvenile survival rate as the spawning biomass tends to zero (for the Beverton-Holt model this can be derived from steepness as $\kappa= 4h/[1-h]$, \cite[see][for further details]{Martell2008pam}).  Spawning biomass per recruit is given by:
-\begin{eqnarray}
-	\phi_e = \sum_{a=1}^\infty l_a f_a\label{eq:phi_e}\\
+where the spawning biomass per recruit $\phi_e$ and $\phi_f$ for unfished and fished conditions, respectively, is based on the survivorship and mature female weight-at-age,  or fecundity-at-age ($f_a$).  Two leading parameters are the unfished age-1 recruits $R_o$, which serves the purpose of providing the overall population scale, and the recruitment compensation parameter $\kappa$ which is defined as the relative improvement in juvenile survival rate as the spawning biomass tends to zero. For the Beverton-Holt model this can be derived from steepness as $\kappa= 4h/[1-h]$, \citep[see][for further details]{Martell2008pam}.  Spawning biomass per recruit is given by:
+\begin{equation}
+	\phi_e = \sum_{a=1}^\infty l_a f_a\label{eq:phi_e}
+\end{equation}
+\begin{equation}
 	\phi_f = \sum_{a=1}^\infty \acute{l}_a f_a\label{eq:phi_f}
-\end{eqnarray}
+\end{equation}
 Note that it is not necessary to have absolute estimates of fecundity as the units cancel out in the $\phi_e/\phi_f$ ratio in \eqref{eq:R_e}. What is important is the relative egg contribution by age, and here it is assumed that fecundity is proportional to mature female body weight.
 
 Based on equations \ref{eq:Y_e}--\ref{eq:phi_f} it is now possible to calculate the equilibrium yield given estimates of the following parameters: $\Theta = \{R_o, \kappa, M_a, f_a, w_a, v_a\}$.
