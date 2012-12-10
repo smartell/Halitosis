@@ -4,33 +4,34 @@
 
 \subsection*{Equilibrium model} % (fold)
 \label{sub:equilibrium_model}
-At equilibrium the annual yield is calculated as the sum over ages of the fraction of individuals that die due to fishing multiplied by the total number or biomass of individuals available for harvest.  Thus the equilibrium yield equation, assuming both natural and fishing mortality occur simultaneously,  can be written as:
+At equilibrium, the annual yield is calculated as the sum over ages of the fraction of individuals that die due to fishing multiplied by the total number or biomass of individuals available for harvest.  Thus the equilibrium yield equation, assuming both natural and fishing mortality occur simultaneously,  can be written as:
 \begin{equation}\label{eq:Y_e}
 	Y_e = \sum_{a=1}^\infty \frac{B_a F_a [1-\exp(-M_a-F_a)]}{M+F_a}
 \end{equation}
 where $F_a$ is the age-specific fishing mortality rate which can be parsed as $F_e v_a$, where $v_a$ is the age-specific fraction that is vulnerable to fishing mortality (also termed selectivity in models that do not distinguish between landed and discarded fish).  It is common to use a simple parametric function (i.e., a logistic curve) to describe age-specific selectivities.  For this application we use the same length-based coefficients that are internally estimated in the stock assessment model and convert these coefficients into age-based selectivities based on the mean length-at-age and the coefficient of variation in the mean length-at-age.  Biomass at age ($B_a$) is defined as the numbers-at-age ($N_a$) times the average weight-at-age ($w_a$).  Assuming steady-state conditions, this can be expressed as the product of recruitment, survivorship, and the average weight-at-age.  Assuming unfished conditions (i.e., $F_e=0$), survivorship to a given age is given by the following recursive equation and natural mortality rate $M$:
 \begin{equation}\label{eq:unfished_survivorship}
-	l_a = 1,  \mbox{for $a$=1 and} \quad l_{a-1} \exp(-M_a),  \mbox{for $a>1$}
+	l_a = 1,  \mbox{for $a$=1 and} \quad l_a= l_{a-1} \exp(-M_a),  \mbox{for $a>1$}
 \end{equation}
 and survivorship under fished conditions ($F_e > 0$) is given by:
 \begin{equation}\label{eq:fished_survivorship}
-	\acute{l}_a =1, \mbox{for $a$=1 and} \quad \acute{l}_{a-1} \exp(-M_a-F_e v_a), \mbox{for $a>1$}. 
+	\acute{l}_a =1, \mbox{for $a$=1 and} \quad \acute{l}_{a} = \acute{l}_{a-1} \exp(-M_a-F_e v_a), \mbox{for $a>1$}. 
 \end{equation}
-The age-specific biomass is given as:
+The total age-specific biomass  is given as:
 \begin{equation} \label{eq:B_a}
-	B_a = R_o l_a w_a.
+	B_a = R_e l_a w_a,
 \end{equation}
+where $R_e$ is the equilibrium number of age-1 recruits.
 
-Substituting \eqref{eq:B_a} into  \eqref{eq:Y_e} and parsing the fishing mortality rate components yields the following expression
+Substituting \eqref{eq:B_a} into  \eqref{eq:Y_e} and parsing fishing mortality into age-specific components yields the following expression
 \begin{equation}\label{eq:Y_e2}
-	Y_e = F_e R_e \sum_{a=1}^\infty \frac{l_a,w_a v_a [1-\exp(-M_a-F_e v_a)]}{M+F_e v_a},
+	Y_e = F_e R_e \sum_{a=1}^\infty \frac{l_a w_a v_a [1-\exp(-M_a-F_e v_a)]}{M+F_e v_a},
 \end{equation}
 where $R_e$ is the equilibrium recruitment obtained under a fishing mortality rate $F_e$. The summation term in \eqref{eq:Y_e2} represents the yield per recruit ($\phi_q$), and the yield equation simplifies to:
 \begin{equation}\label{eq:Y_e3}
 	Y_e = F_e R_e \phi_q.
 \end{equation}
 
-For a given equilibrium fishing mortality rate $F_e$, the equilibrium recruitment is a function of the available spawning biomass relative to the unfished spawning biomass. For the Beverton-Holt model, this can be expressed as
+For a given equilibrium fishing mortality rate $F_e$, the equilibrium recruitment is a function of the available spawning biomass relative to the unfished spawning biomass. For the Beverton-Holt model, this can be expressed as:
 \begin{equation}\label{eq:R_e}
 	R_e = \frac{R_o (\kappa-\phi_e/\phi_f)}{\kappa -1} 
 \end{equation}
@@ -43,44 +44,52 @@ where the spawning biomass per recruit $\phi_e$ and $\phi_f$ for unfished and fi
 \end{equation}
 Note that it is not necessary to have absolute estimates of fecundity as the units cancel out in the $\phi_e/\phi_f$ ratio in \eqref{eq:R_e}. What is important is the relative egg contribution by age, and here it is assumed that fecundity is proportional to mature female body weight.
 
-Based on equations \ref{eq:Y_e}--\ref{eq:phi_f} it is now possible to calculate the equilibrium yield given estimates of the following parameters: $\Theta = \{R_o, \kappa, M_a, f_a, w_a, v_a\}$.
+Based on equations \ref{eq:Y_e}--\ref{eq:phi_f} it is now possible to calculate the equilibrium yield given estimates of the following parameters: $\Theta = \{R_o, \kappa, M_a, f_a, w_a, v_a\}$.  The following subsections describe how these equilibrium calculations can be modified to include mortality associated with catch-release, and how the cumulative effects of size-selective fishing can lead to changes in mean size-at-age.
 % subsection equilibrium_model (end)
 
 \subsection*{Including release mortality} % (fold)
 \label{sub:including_release_mortality}
-The equilibrium model described in the previous section only considers the case in which all fish captured for a unit of fishing mortality $F_e$ are removed from the population and does account for cases in which some fish captured will be discarded because they are not within the legal size range.  To include the effects of post-release mortality associated with size limits, the vulnerability age-schedule ($v_a$) has to be modelled as as a joint probability, where the probability of dying due to fishing is based on the probability of capture and being retained times the probability of being captured, released, and dying after release.  This simple joint probability is as follows:
+The equilibrium model described in the previous section only considers the case in which all fish captured for a unit of fishing mortality $F_e$ are removed from the population and not for cases in which some fish captured will be discarded because they are not within the legal size range.  To include the effects of post-release mortality associated with size limits, the vulnerability age-schedule ($v_a$) has to be modeled as as a joint probability, where the probability of dying due to fishing is based on the probability of capture and being retained times the probability of being captured, released, and dying after release.  This joint probability is as follows:
 \begin{equation} \label{eq:v_a}
 	v_a = v_c[v_r + (1-v_r)\lambda]
 \end{equation}
-where $v_a$ is the age-specific mortality rate associated with a unit of fishing mortality, $v_c$ is the age-specific probability of being captured by fishing gear, $v_r$ and $(1-v_r)$ are the age-specific retention and release probabilities, and $\lambda$ is the probability of dying after being discarded (assumed to be 0.16 in the directed fishery).
+where $v_a$ is the age-specific vulnerability associated with a unit of fishing mortality, $v_c$ is the age-specific probability of being captured by fishing gear, $v_r$ and $(1-v_r)$ are the age-specific retention and release probabilities, and $\lambda$ is the probability of dying after being discarded (assumed to be 0.16 in the directed fishery).
 
-To implement the effects of size-limits and post-release mortality rates on the equilibrium yield calculations defined in the previous section, we simply substitute \eqref{eq:v_a} for all the $v_a$ terms in equations \ref{eq:fished_survivorship} and \ref{eq:Y_e3} above.
+To implement the effects of size-limits and post-release mortality rates on the equilibrium yield calculations defined in the previous section, we simply substitute \eqref{eq:v_a} for all the $v_a$ terms in equations \ref{eq:fished_survivorship} and \ref{eq:Y_e3} above.  In addition to calculating equilibrium yield ($Y_e$), the equilibrium discards can also be calculated in a similar manner as \eqref{eq:Y_e3}, where the discard per recruit is defined as:
+\begin{equation}\label{eq:phi_d}
+	\phi_d = \sum_{a=1}^\infty \frac{l_a w_a v_c(1-v_r) [1-\exp(-M_a-F_e v_a)]}{M+F_e v_a},
+\end{equation}
+and the total discards are given by:
+\begin{equation}\label{eq:D_e}
+	D_e = F_e R_e \phi_d.
+\end{equation}
+Note that equation \ref{eq:D_e} represent the total biomass of discarded fish; the total discard mortality is  the discard mortality rate ($\lambda$) multiplied by $D_e$.
 % subsection including_release_mortality (end)
 
 \subsection*{Cumulative effects of size-selective fishing} % (fold)
 \label{sub:cumulative_effects_of_size_selective_fishing}
-To account for variation in growth and represent the cumulative effects of size-selective fishing, the population is divided into a number of distinct groups ($G$) that each have a unique growth curve ($l_{a,g}$).  Growth was based on fitting a 4-parameter growth model to the 2011 sex-specific length-age data collected in the fishery independent setline survey (see Appendix \ref{sec:estimation_of_growth}). The variance in length-at-age for each of the $G$ cohorts was assumed to add to the observed total variance in length-at-age and was partitioned as:
+To account for variation in growth and represent the cumulative effects of size-selective fishing, the population is divided into a number of distinct groups ($G$) that each have a unique growth curve ($l_{a,g}$).  Growth was based on fitting a growth model to the 2011 sex-specific length-age data collected in the fishery independent setline survey (see Appendix \ref{sec:estimation_of_growth}). The variance in length-at-age for each of the $G$ groups is set to a fraction of the estimated total variance from  the setline survey length-at-age data:
 \[
  \sigma_{l_a}^2 = \frac{1}{G} (l_a CV)^2
 \]
-where $l_a$ is the estimated mean length-at-age, and $CV$ is the estimated coefficient of variance.  Partitioning this growth model into $G$ different cohorts that vary in the mean length-at-age only can than be extended into the equilibrium model where each of the above calculations in equations \eqref{eq:Y_e}-\eqref{eq:phi_f} represents sub-populations that differ only in growth.
+where $l_a$ is the estimated mean length-at-age, and $CV$ is the estimated coefficient of variance.  Partitioning growth  into $G$  groups that vary in the mean length-at-age only can then be integrated into the equilibrium model a series of $G$ sub-populations, where each of the above calculations in equations \eqref{eq:Y_e}-\eqref{eq:phi_f} represents sub-populations that differ only in growth and relative numerical abundance. A similar model was developed by \cite{mulligan1992length} for Pacific ocean perch to explain poor residual patterns obtained when fitting a standard growth curve that assumes size-at-age is normally distributed.
 
-The proportion of recruitment to each of these $G$ groups is assumed to be normally distributed with 99.7\% of all individuals falling within 3 standard deviations of the mean asymptotic length.  There are no assumptions about the composition of the spawning stock biomass and recruitment into each of these groups (i.e., no genetic selection effects due to fishing is assumed), and irrespective of spawning stock size, recruitment to each of these groups follows the same normal distribution.
+The proportion of recruitment to each of these $G$ groups is assumed to be normally distributed with 99.7\% of all individuals falling within 3 standard deviations of the mean asymptotic length.  There are no assumptions about the composition of the spawning stock biomass and recruitment into each of these groups (i.e., no genetic selection effects due to fishing is assumed), and irrespective of spawning stock size, recruitment to each of these groups follows the same normal distribution.  Genetic extensions could be included to examine fishery induced evolution, if desired.
 
 The per recruit functions described in the previous equations are then modified to include both the age- and size-effect.  For example, the spawning biomass per recruit described in \eqref{eq:phi_f} is now calculated as:
 \begin{equation}
 	\phi_{f} =\sum_{g=1}^G p_g \sum_{a=1}^\infty \acute{l}_a f_a\label{eq:phi_fg}
 \end{equation}
-where $p_g \sim N(0,1)$ and computed over $G=11$ discrete intervals from -1.96 to 1.96.  In other words, the equilibrium population consists of 11 discrete sub-populations that differ only in their mean length-at-age and the relative abundance of each sub-population follows a normal distribution.  In such a case, non-zero fishing mortality  ($F_e>0$) would then impose differential total mortality, where faster growing individuals would be subjected to a higher overall $F_e$ over its life-time relative to slower growing individuals because they recruit to the fishery at a younger age.
+where $p_g \sim N(0,1)$ and computed over $G=11$ discrete intervals from -1.96 to 1.96.  In other words, the equilibrium population consists of 11 discrete sub-populations that differ only in their mean length-at-age and the relative abundance of each sub-population follows a normal distribution.  In such a case, non-zero fishing mortality  ($F_e>0$) would then impose differential total mortality, where faster growing individuals would be subjected to a higher overall $F_e$ over its lifetime relative to slower growing individuals because they recruit to the size-selective fishery at a younger age.
 % subsection cumulative_effects_of_size_selective_fishing (end)
 
-\subsection*{Life-history parameters and price information} % (fold)
+\subsection*{Life-history parameters}% and price information} % (fold)
 \label{sub:life_history_parameters_and_price_information}
-For the following analysis, the assumed natural mortality, price,  and selectivity parameters are listed in Table 1.  Estimated growth parameters for each regulatory area are summarized in Table \ref{table:growth_pars} in Appendix \ref{sec:estimation_of_growth}.  Sexual maturity for female halibut was assumed to be a logistic function of age, where the age-at-50\% maturity is 10.91 years and the standard deviation is 1.406 years.  Relative fecundity-at-age is assumed to be proportional to mature female weight-at-age.  The allometric length-weight relationship ($a,b$ parameters in $W = a L ^b$) was assumed to be the same for both sexes (Table \ref{table:Life_history_pars}).
+For this paper, the assumed natural mortality, price,  and selectivity parameters are listed in Table 1.  Estimated growth parameters for each regulatory area are summarized in Table \ref{table:growth_pars} in Appendix \ref{sec:estimation_of_growth}.  Sexual maturity for female halibut was assumed to be a logistic function of age, where the age-at-50\% maturity is 10.91 years and the standard deviation is 1.406 years.  Relative fecundity-at-age is assumed to be proportional to mature female weight-at-age.  The allometric length-weight relationship ($a,b$ parameters in $W = a L ^b$) was assumed to be the same for both sexes (Table \ref{table:Life_history_pars}).
 
-The two key parameters that define the underlying stock-recruitment relationship in this model are: $B_o$, the unfished spawning stock biomass, and steepness ($h$) which is defined as the fraction of unfished recruitment that is obtained when the spawning stock biomass is reduced to 20\% of its unfished state.  Normally these two parameters are obtained by fitting a stock-recruitment relationship to the historical estimates of spawning biomass and recruitment numbers (usually done internally within the stock assessment model).  The current assessment model for Pacific halibut has no built in stock recruitment relationship at this time, so these parameters are not readily available.  In the absence of $B_o$ and $h$ estimates, $B_o$ was arbitrarily set at 100 units,  and a steepness value of 0.75 was chosen somewhat arbitrarily because estimates of $F_{\rm{MSY}}$ were fairly similar to those obtained for areas 3A, 2B and 2C by \cite{clark2006assessment}.
+The two key parameters that define the underlying stock-recruitment relationship in this model are: $B_o$, the unfished spawning stock biomass, and steepness ($h$) which is defined as the fraction of unfished recruitment that is obtained when the spawning stock biomass is reduced to 20\% of its unfished state.  Normally these two parameters are obtained by fitting a stock-recruitment relationship to the historical estimates of spawning biomass and recruitment numbers (usually done internally within the stock assessment model).  The current assessment model for Pacific halibut has no built in stock recruitment relationship at this time, so these parameters are not readily available.  In the absence of $B_o$ and $h$ estimates, $B_o$ was arbitrarily set at 100 pounds,  and a steepness value of 0.75 was chosen somewhat arbitrarily because estimates of $F_{\rm{MSY}}$ were fairly similar to those obtained for areas 3A, 2B and 2C by \cite{clark2006assessment}.  Note also, that in arriving at a value of 0.75 for steepness, no  bycatch was assumed for the non-directed fisheries (i.e., bycatch for the trawl fisher was set equal to 0).
 
-Price information was based on the following size ranges (in lb): \$6.75 for (10-20), \$7.30 for (20-40), and \$7.50 (40+). The absolute price  is not critical; for example, if the price was the same for all size categories, than the landed value would just be a multiplier of the total landed catch.  If, however, there are greater differences in price between size categories (price premiums) then incentives for catching larger-- more valuable-- fish would increase and perhaps decrease the incentive to fill the hold with lower value small fish.
+% Price information was based on the following size ranges (in lb): \$6.75 for (10-20), \$7.30 for (20-40), and \$7.50 (40+). The absolute price  is not critical; for example, if the price was the same for all size categories, then the landed value would just be a multiplier of the total landed catch.  If, however, there are greater differences in price between size categories (i.e., premiums for larger sizes) then incentives for catching larger-- more valuable-- fish would increase and perhaps decrease the incentive to fill the hold with lower value small fish.
 
 
 \begin{table}
@@ -131,20 +140,21 @@ Price information was based on the following size ranges (in lb): \$6.75 for (10
 % subsection life_history_parameters_and_price_information (end)
 \subsection*{Optimal fishing rates} % (fold)
 \label{sub:optimal_fishing_rates}
-To determine fishing mortality rates that would maximize yields in each of the regulatory areas, a discrete range of equilibrium fishing mortality rates was used to calculate equation \eqref{eq:Y_e3} and the value of $F_e$ that corresponds to the maximum $Y_e$ was then set equal to $F_{\rm{MSY}}$ for that regulatory area.  Note that in the equilibrium model presented here, fishing mortality is modelled as an instantaneous rate for the purposes of partitioning total mortality  into additive components of natural mortality, fishing mortality, and discard mortality.  The relationship between the optimal  exploitation rates ($U_{\rm{MSY}}$) in \cite{clark2006assessment} and this paper is:
+To determine the fishing mortality rate that would maximize the relative yield in each regulatory area, a discrete range of equilibrium fishing mortality rates was used to calculate equation \eqref{eq:Y_e3} and the value of $F_e$ that corresponds to the maximum $Y_e$ was then set equal to $F_{\rm{MSY}}$ for that regulatory area. The relationship between $F_e$ and $Y_e$ is then plotted for each regulatory area (also referred to as equilibrium yield curves). 
+
+Note that in the equilibrium model presented here, fishing mortality is modelled as an instantaneous rate for the purposes of partitioning total mortality  into additive components of natural mortality, fishing mortality, and discard mortality.  The relationship between the optimal fishing mortality rates and discrete exploitation rates ($U_{\rm{MSY}}$) in \cite{clark2006assessment} and this paper is approximately:
 \[
 F_{\rm{MSY}} = -\ln(1-U_{\rm{MSY}}).
 \]
 
-
-The equilibrium yield curves obtained for each regulatory area assume no migration between each regulatory area, and for the purposes of this paper, are effectively treated as closed populations.  Therefore, a single value of $B_o$ is used for all regulatory areas and we only report the relative yields per 100 units of unfished spawning biomass.  The other reason for assuming the same scaling and steepness parameter for each of the regulatory areas is it also allows for per-recruit comparisons of yield, spawning biomass, discards etc.
+The equilibrium yield curves obtained for each regulatory area assume no migration between each regulatory area, and for the purposes of this paper, are effectively treated as closed populations.  Therefore, a single value of $B_o$ is used for all regulatory areas and we only report the relative yields per 100 pounds of unfished spawning biomass.  The other reason for assuming the same scaling and steepness parameter is that it also allows for direct  comparisons of yield-per-recruit, spawning biomass per-recruit, discards per-recruit etc. in response to differences in size-at-age (growth) in each regulatory area.
 
 % subsection optimal_fishing_rates (end)
 
 \subsection*{Scenarios} % (fold)
 \label{sub:scenarios}
 
-A range of parameter combinations were explored to examine the implications of changing minimum size-limits, or sensitivities to alternative assumptions about discard mortality rates, steepness or the effects of non-directed fisheries.  In addition to the base scenario (S1, Table \ref{table:Scenarios}), eight additional scenarios were examined to explore the effects of minimum and maximum size limits (S2, S3), a 10cm shift in commercial selectivity towards smaller fish (S4), other mortality associated with non-directed fisheries that remove a constant catch (S5), and sensitivity to size-dependent natural mortality (S6, S7) and steepness (S8, S9).
+A range of policy parameter combinations in the equilibrium model were explored to examine the implications of changing fishing regulations on optimal harvest rate calculations.  Also the sensitivity of optimal harvest rates to alternative assumptions about discard mortality rates, steepness, or the effects of bycatch non-directed fisheries was also examined.  In addition to the base scenario (S1, Table \ref{table:Scenarios}), eight additional scenarios were examined to explore the effects of minimum and maximum size limits (S2, S3), a 10cm shift in commercial selectivity towards smaller fish (S4), other mortality associated with non-directed fisheries that remove a constant catch (S5), and sensitivity to size-dependent natural mortality (S6, S7) and steepness (S8, S9).
 
 
 
@@ -170,14 +180,13 @@ A range of parameter combinations were explored to examine the implications of c
 	\end{center}
 \end{table}
 
-The intention of scenarios 2 and 3 is to examine how the overall equilibrium yield, yield per recruit, spawning biomass per recruit, and estimates of F$_{\rm{MSY}}$ would change with changes in size limits.  Similarly, how would these same variables change is the fishery targeted smaller fish (S4).  In the case of Scenario 4, the same size-based selectivity coefficients are used, but the liner interpolation over size is shifted to 50--120cm from the status quo of 60--130cm.  In other words, if a 100cm female had a selectivity of 0.535 in the base scenario, is S4 it has a selectivity of 0.535 at 90cm.  
+The intention of scenarios 2 and 3 is to examine how the overall equilibrium yield, yield-per-recruit, spawning biomass per-recruit, and estimates of F$_{\rm{MSY}}$ would change with changes in size limits.  Similarly, how would these same variables change if the fishery targeted smaller fish (S4)?  In the case of Scenario 4, the same size-based selectivity coefficients are used, but the liner interpolation over size is shifted to 50--120cm from the status quo of 60--130cm.  In other words, if a 100cm female had a selectivity of 0.535 in the base scenario, is S4 it has a selectivity of 0.535 at 90cm.  
 
-
-In scenario S5, to approximate a fixed amount of bycatch from a non-directed trawl fishery, the trawl induced fishing mortality rate was approximated by calculating the approximate fishing mortality rate under alternative  fishing mortality rates for the directed halibut fishery.  To elaborate, if the bycatch fisheries discard a fixed amount of say 1 million pounds of dead halibut each year and the equilibrium biomass is 10 million pounds, then the corresponding fishing mortality rate of the bycatch fishery is proportional to 1/10, or 0.1.  If however the equilibrium biomass is at a lower level, say 2.5 million pounds, then the equilibrium fishing mortality rate is proportional to 1/2.5, or 0.40.  To approximate the exponentially increasing effect of a fixed level of bycatch, the equilibrium biomass for a given directed fishery mortality rate ($F_e$) was approximated as $B_e = B_o 0.15/(0.15+F_e)$.  In other words, for increasing values of $F_e$, the approximate equilibrium biomass declines to 0.15$B_o$; the corresponding bycatch fishing mortality is then given by \[F_b = \rm{bycatch}/B_e.\]  It was also assumed that bycatch from the directed trawl fisheries selected fish of small and intermediate sizes.  This selectivity was approximated with a double logistic function with the size at 50\% selectivity at 61cm for the ascending limb and 81.3 for the descending limb, and a standard deviation of 0.1 (knife-edge) for both ascending and descending portions of the curve.  In reality the actual selectivity curves could differ markedly, and the appropriate size-composition data would have to be integrated into the assessment model to estimate these selectivity parameters.
+In scenario S5, the bycatch from a non-directed trawl fishery is assumed to be constant, irrespective of the density of halibut on the trawl grounds (a worst-case scenario).  In this case, the fishing mortality rate is expected to decrease exponentially with increasing halibut density.  For example, if the bycatch fisheries discard a fixed amount of  1 million pounds of dead halibut each year and the equilibrium biomass is 10 million pounds, then the corresponding fishing mortality rate of the bycatch fishery is proportional to 1/10, or 0.1.  If, however, the equilibrium biomass is at a lower level, e.g., 2.5 million pounds, then the equilibrium fishing mortality rate is proportional to 1/2.5, or 0.40.  To approximate the exponentially increasing effect of a fixed level of bycatch, the equilibrium biomass for a given directed fishery mortality rate ($F_e$) was approximated as $B_e = B_o 0.15/(0.15+F_e)$.  In other words, for increasing values of $F_e$, the approximate equilibrium biomass declines to 0.15$B_o$; the corresponding bycatch fishing mortality is then given by \[F_b = \rm{bycatch}/B_e.\]  It was also assumed that bycatch from the directed trawl fisheries selected fish of small and intermediate sizes.  This selectivity was approximated with a double logistic function with the size at 50\% selectivity at 61cm for the ascending limb and 81.3 for the descending limb, and a standard deviation of 0.1cm (knife-edge) for both ascending and descending portions of the curve.  In reality, the actual selectivity curves could differ markedly, and the appropriate size-composition data would have to be integrated into the assessment model to estimate  selectivity parameters for a discard fishery.
 
 In scenarios 6 and 7, natural mortality is assumed to be size-dependent where small halibut have a higher natural mortality rate than larger halibut (S6), or natural mortality rates increase with increasing size (S7).  In both scenarios 6 and 7, the average natural mortality rate is approximately 0.15 when integrated over all size classes.
 
-Lastly, scenarios 8 and 9 are intended to demonstrate how sensitive the reference fishing mortality rate calculation are to the assumed value of steepness in the stock assessment model.  This is akin to the range of recruitment values used in the \cite{clark2006assessment} simulation study where no density-dependent effects on recruitment were assumed.
+Lastly, scenarios 8 and 9 are intended to demonstrate how sensitive the reference fishing mortality rate calculation is to the assumed value of steepness in the stock assessment model.  This is akin to the range of recruitment values used in the \cite{clark2006assessment} simulation study where no density-dependent effects on recruitment were assumed.
 
 % subsection scenarios (end)
 

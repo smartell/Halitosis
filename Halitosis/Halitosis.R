@@ -822,19 +822,22 @@ ggsave(p.yeAll, file="../FIGS/fig:YeALL.pdf")
 # |---------------------------------------------------------------------------|
 # | Mean weight-at-age vs F  for females                                             
 # |---------------------------------------------------------------------------|
-   iage        <- seq(6, 20, by=2)
+   iage        <- c(6, 12, 14, 20)
+   Scen        <- 1
    nm          <- colnames(DF)
    wbar_f_cols <- nm %in% grep("^wbar_f",nm,value=TRUE)
-   sDF         <- cbind(Area=DF$Area, fe=DF$fe, sex="Female", DF[,wbar_f_cols])
-   colnames(sDF) <- c("Area", "fe", "sex", paste(1:A) )
+   sDF         <- cbind(Area=DF$Area, fe=DF$fe,sex="Female",S=DF$Scenario, DF[,wbar_f_cols])
+   sDF         <- subset(sDF, S==Scen)
+   colnames(sDF) <- c("Area", "fe", "sex", "Scenario", paste(1:A) )
    icol          <- c(1, 2, 3, match(iage, names(sDF)))
    mDF           <- melt(sDF[icol],id.vars=c("Area","fe","sex"))
 
-   p.wbar_f <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()
+   p.wbar_f <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()+xlim(c(0, 0.75))
    p.wbar_f <- p.wbar_f + labs(x="Fishing mortality rate", y="Mean weight-at-age (lb)")
-   p.wbar_f <- p.wbar_f + theme(axis.title = element_text(size = rel(RELSIZE)))
+   #p.wbar_f <- p.wbar_f + theme(axis.title = element_text(size = rel(RELSIZE)))
    p.wbar_f <- p.wbar_f + labs(color="Age")
    p.wbar_f <- p.wbar_f + facet_wrap(~Area)
+   ggsave(p.wbar_f, file="../FIGS/fig:wbar_female.pdf")
 
 
 # |---------------------------------------------------------------------------|
@@ -842,7 +845,8 @@ ggsave(p.yeAll, file="../FIGS/fig:YeALL.pdf")
 # |---------------------------------------------------------------------------|
    nm          <- colnames(DF)
    wbar_m_cols <- nm %in% grep("^wbar_m",nm,value=TRUE)
-   sDF         <- cbind(Area=DF$Area, fe=DF$fe, sex="Male", DF[,wbar_m_cols])
+   sDF         <- cbind(Area=DF$Area, fe=DF$fe, sex="Male",S=DF$Scenario, DF[,wbar_m_cols])
+   sDF         <- subset(sDF, S==Scen)
    colnames(sDF) <- c("Area", "fe", "sex", paste(1:A) )
    icol          <- c(1, 2, 3, match(iage, names(sDF)))
    mDF           <- melt(sDF[icol],id.vars=c("Area","fe","sex"))
