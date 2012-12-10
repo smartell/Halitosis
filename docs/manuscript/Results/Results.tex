@@ -13,14 +13,17 @@ Size-at-age data in each of the regulatory areas has very marked differences in 
 	\caption{Length-at-age data by sex and regulatory area collected in the 2011 setline survey and corresponding estimated growth curves for each regulatory area.}
 	\label{fig:FIGS_fig:lengthAgeFitbySex}
 \end{figure}
+
+We note here that estimated growth parameters in Figure \ref{fig:FIGS_fig:lengthAgeFitbySex} are biased due to size-based selectivity in the setline survey and potentially contaminated due to the cumulative effects of size-selective fishing.  Nonetheless, the relative differences in growth rates in each of the regulatory areas is what is important in this analysis.
+
 % subsection growth (end)
 
 \subsection*{Area-specific estimates of F$_{\rm{MSY}}$} % (fold)
 \label{sub:area_specific_estimates_of_FMSY}
 
-The relative equilibrium yield versus fishing mortality rate in each of the regulatory areas  (Figure \ref{fig:FIGS_fig:YeBase}) demonstrate the relative differences in expected yield based only on differences in halibut growth (size-at-age) in each of the regulatory areas.  For each of the regulatory areas shown in Figure \ref{fig:FIGS_fig:YeBase}, a minimum size limit of 81.3cm exists, steepness is fixed at an arbitrary value of 0.75, size-selectivity is the same in each area, and natural mortality rates are the same ($M=0.15$) for all areas.  The only biological difference between regulatory areas is the growth rate.  For each recruiting halibut in a specific regulatory area, the maximum yield per recruit would be obtained in area 2A.  Halibut in area 2A are very large at younger ages and more vulnerable to the fishing gear (selectivity) at a time when they are numerically more abundant.
+The relative equilibrium yield versus fishing mortality rate in each of the regulatory areas  (Figure \ref{fig:FIGS_fig:YeBase}) demonstrate the relative differences in expected yield based only on differences in halibut growth (size-at-age) in each of the regulatory areas.  For each of the regulatory areas shown in Figure \ref{fig:FIGS_fig:YeBase}, a minimum size limit of 81.3cm exists, steepness is fixed at an arbitrary value of 0.75, size-selectivity is the same in each area, and natural mortality rates are the same ($M=0.15$) for all areas.  The only biological difference between regulatory areas is the growth rate.  For each recruiting halibut in a specific regulatory area, the maximum yield per recruit would be obtained in area 2A.  Halibut in area 2A are very large at younger ages and more vulnerable to the fishing gear (selectivity) at an age when they are numerically more abundant.
 
-In contrast, in Area 4C halibut obtain very large sizes, but the growth rate is much slower in comparison to 2A so fewer individuals are available to be harvested and less yield per recruit is obtained in this area.  The net result of this difference in growth rates is that estimates of F$_{\rm{MSY}}$ are lower in Area 4C relative to Area 2A.
+In contrast, in Area 4C halibut obtain very large sizes, but the growth rate is much slower in comparison to 2A so fewer individuals are available to be harvested and less yield per recruit is obtained in this area.  The net result of this difference in growth rates is that estimates of F$_{\rm{MSY}}$ are lower in Area 4C relative to Area 2A (Figure \ref{fig:FIGS_fig:YeBase} and Table \ref{table:Umsy}).  The difference in early growth between 2A and 4C translates into roughly 40\% more yield per recruit in area 2A.
 
 
 \begin{figure}[htbp]
@@ -30,7 +33,7 @@ In contrast, in Area 4C halibut obtain very large sizes, but the growth rate is 
 	\label{fig:FIGS_fig:YeBase}
 \end{figure}
 
-Equilibrium yield curves for each regulatory area under each of the 9 alternative scenarios are shown in Figure \ref{fig:FIGS_fig:YeALL} and the corresponding estimates of optimal exploitation rates ($1-exp(-F_{\rm{MSY}})$) are summarized in Table \ref{table:Umsy}.  Relative to the current harvest rate policy of 21.5\% and 16.125\%, estimates of optimal exploitation rates for Areas 2B and 2C are below the current 21.5\% value.   However, recall that this is based on the assumption of a Beverton-Holt stock recruitment relationship with a steepness value set at an arbitrary level of 0.75.  This arbitrary value was selected because it was consistent with the previous harvest rate policy, which was developed using two average density-independent recruitment values based on previous closed area assessment models.  The utility of S1 is to serve as a baseline in which to compare impacts of alternative size limits, and model assumptions,  on the estimates of optimal exploitation rates that would maximize the average long-term yield in each of the statistical areas.
+Equilibrium yield curves for each regulatory area under each of the 9 alternative scenarios are shown in Figure \ref{fig:FIGS_fig:YeALL} and the corresponding estimates of optimal exploitation rates ($1-\exp(-F_{\rm{MSY}})$) are summarized in Table \ref{table:Umsy}.  Relative to the current harvest rate policy of 21.5\% and 16.125\%, estimates of optimal exploitation rates for Areas 2B and 2C are below the current 21.5\% value.   However, recall that this is based on the assumption of a Beverton-Holt stock recruitment relationship with a steepness value set at an arbitrary level of 0.75.  The utility of S1 is to serve as a baseline in which to compare impacts of alternative size limits and model assumptions on the estimates of optimal exploitation rates that would maximize the average long-term yield in each of the statistical areas.
 
 
 \begin{figure}[htbp]
@@ -103,7 +106,9 @@ Scenario 4 represents a shift in the commercial selectivity towards smaller fish
 	\end{center}
 \end{table}
 
-The effects of other discard mortality, from non-directed fisheries, also plays a role in harvest policy calculations.  In scenario 5, a constant total harvest (i.e., bycatch from a trawl fishery) was imposed as an increasing fishing mortality rate with increasing directed $F_e$.  In this scenario, a constant level of bycatch results in a dramatic reduction in overall yield in the directed fishery (Table \ref{table:MSY}) and a reduction in the optimal harvest rate ($F_{\rm{MSY}}$) that would produce the maximum sustainable yield in the directed fishery.  This is similar to discarding undersized fish, but in this case the mortality rate imposed by the bycatch fishery increases with declining stock size.  Whereas, in the directed fishery, annual catches would scale down with reductions in exploitable biomass, and fishing mortality rates would scale down if the spawning biomass falls below B$_{30\%}$.  It should also be noted that the opposite result would occur where $F_{\rm{MSY}}$ estimates would increase if efforts were made to reduce bycatch in non-directed fisheries.  
+The effects of other discard mortality, from non-directed fisheries, also plays a role in harvest policy calculations.  In scenario 5, a constant total harvest of 2 lb (i.e., bycatch from a trawl fishery) was imposed as an increasing fishing mortality rate with increasing directed $F_e$.  In this scenario, a constant level of bycatch results in a dramatic reduction in overall yield in the directed fishery (Table \ref{table:MSY}) and a reduction in the optimal harvest rate ($F_{\rm{MSY}}$) that would produce the maximum sustainable yield in the directed fishery.  For example, in area 2A 2 units of bycatch would reduce the directed yield by 1.41 lb if fishing at the optimal fishing mortality rate (Table \ref{table:MSY}, scenario S5).  
+
+In the case bycatch fisheries that remove a fixed amount, the mortality rate increases with declining stock size.  Whereas, in the directed fishery, annual catches would scale down with reductions in exploitable biomass, and fishing mortality rates would scale down if the spawning biomass falls below B$_{30\%}$.  Note also that $F_{\rm{MSY}}$ estimates would increase if efforts were made to reduce bycatch in non-directed fisheries.
 
 %Bmsy table
 \begin{table}
@@ -131,16 +136,16 @@ The effects of other discard mortality, from non-directed fisheries, also plays 
 
 \subsection*{Sensitivity to assumed parameter values} % (fold)
 \label{sub:sensitivity_to_assumed_parameter_values}
-Scenarios 6 and 7 examine how sensitive MSY-based reference points are to estimates of natural mortality rates.  The current assessment model assumes natural mortality is independent of size/age.  These two scenarios examine a size-effect in natural mortality.  In general, if $M$ is size/age independent, the increasing $M$ results in increases in the estimates of $F_{\rm{MSY}}$, and vice versa \citep{WalMart2004}.  Also increases in $M$ results in a decrease in MSY and the spawning biomass at $F_{\rm{MSY}}$.  If $M$ is size-dependent and decreases with size, estimates of $F_{\rm{MSY}}$  also decrease, and vice versa.  Natural mortality also plays a role in the general scaling of MSY; as fewer older fish are available for harvest due to high natural mortality rates, then the value of MSY decreases.  Hence mis-specification of $M$ can lead to biased estimates of other reference points (e.g., SB$_{100}$).
+Scenarios 6 and 7 examine how sensitive MSY-based reference points are to estimates of natural mortality rates.  The current assessment model assumes natural mortality is independent of size/age.  These two scenarios examine a size-effect in natural mortality.  In general, if $M$ is size/age independent, the increasing $M$ results in increases in the estimates of $F_{\rm{MSY}}$, and vice versa \citep{WalMart2004}.  Also increases in $M$ results in a decrease in MSY and the spawning biomass at $F_{\rm{MSY}}$.  If $M$ is size-dependent and decreases with size, estimates of $F_{\rm{MSY}}$  also decrease, and vice versa.  Natural mortality also plays a role in the general scaling of MSY; as fewer older fish are available for harvest due to high natural mortality rates, then the value of MSY decreases.  Hence mis-specification of $M$ can lead to biased estimates of other reference points (e.g., unfished spawning biomass $B_o$).
 
-Lastly, estimates of $F_{\rm{MSY}}$ are very sensitive to the steepness of the stock-recruitment relationship.  With increasing steepness the corresponding estimates of $F_{\rm{MSY}}$ also increase, and vice versa.  The resilience of the stock to over-fishing decreases with decreasing values of steepness,  the overall yield declines and there are fewer recruits per unit of spawning biomass (lower stock productivity).
+Lastly, estimates of $F_{\rm{MSY}}$ are very sensitive to the steepness of the stock-recruitment relationship.  With increasing steepness the corresponding estimates of $F_{\rm{MSY}}$ also increase, and vice versa.  The resilience of the stock to over-fishing decreases with decreasing values of steepness,  the overall yield declines and there are fewer recruits per unit of spawning biomass (i.e., lower stock productivity).
 
 % subsection sensitivity_to_assumed_parameter_values (end)
 
 \subsection*{Wastage in the directed fishery} % (fold)
 \label{sub:wastage_in_the_directed_fishery}
 
-In all scenarios where minimum or maximum size limits exist, wastage in the directed fishery increases with increasing fishing mortality.  Under the current status quo scenario (S1), the long-term average wastage in the directed fishery is estimated to be less than 5\% of the total landed yield in each of the regulatory areas if fishing mortality rates are  less that 0.25 (Figure \ref{fig:FIGS_fig:PercentWastage}). Note that for the purposes of this paper, as well as for the wastage estimates that go into the stock assessment model, it is assumed that the selectivity of the commercial fishery is the same as the estimated selectivity curve in the setline survey.
+In all scenarios where size limits exist, wastage in the directed fishery increases with increasing fishing mortality.  Under the current status quo scenario (S1), the long-term average wastage in the directed fishery is estimated to be less than 5\% of the total landed yield in each of the regulatory areas if fishing mortality rates are  less that 0.25 (Figure \ref{fig:FIGS_fig:PercentWastage}). Note that for the purposes of this paper, as well as for the wastage estimates that go into the stock assessment model, it is assumed that the selectivity of the commercial fishery is the same as the estimated selectivity curve in the setline survey.
 
 The use of an upper size limit (S2), results in increased wastage over the status quo scenario, but only in areas where halibut attain sufficiently large sizes. At low equilibrium fishing mortality rates wastage in Areas 2B, 2C, 4B and 4C are greater than 10\% of the landed catch due to large halibut (greater than 140cm) in these regions (Figure \ref{fig:FIGS_fig:PercentWastage}).  As fishing mortality rates increase and erode the size structure, wastage rates decline and effectively become the same as that of a minimum size limit only.  
 
@@ -162,7 +167,7 @@ Mean size-at-age is predicted to decline with increasing size-selective fishing 
 \begin{figure}[htbp]
 	\centering
 		\includegraphics[width=\textwidth]{../../FIGS/fig:wbar_female.pdf}
-	\caption{Expected change in mean weight-at-age for female halibut by regulatory area for ages 5, 10, 15, and 20 years.}
+	\caption{Expected change in mean weight-at-age for female halibut by regulatory area for ages 6, 12, 14, and 20 years.}
 	\label{fig:FIGS_fig:wbar_female}
 \end{figure}
 
