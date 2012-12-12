@@ -34,20 +34,21 @@ DF          <- data.frame(
 #       p7 <- Marginal posteriors for F0.1 for male and female by area panels
 #       p8 <- Marginal posterior plots for F0.1 for female by area.
 graphics.off()
-quartz("Size at age", width=10, height=6)
-p  <- ggplot(DF, aes(age, fl, col=factor(sex))) + geom_point(size=1, alpha=0.3) 
-p  <- p + geom_line(aes(age, fl_hat, col=factor(sex)), size=1) 
+quartz("Size at age", width=10, height=7.0)
+p  <- ggplot(DF, aes(age, fl, shape=factor(sex))) + geom_point(size=1, alpha=0.3) 
+p  <- p + geom_line(aes(age, fl_hat, col=factor(sex)), size=0.5) 
 p  <- p + facet_wrap(~area)
-p  <- p + labs(col="Sex") + xlab("Age (years)") + ylab("Fork length (cm)")
-p1 <- p
+p  <- p + labs(shape="Observed", col="Predicted") + xlab("Age (years)") + ylab("Fork length (cm)")
+p1 <- p + theme_bw(12)
  ggsave(p1, file="../../FIGS/fig:lengthAgeFit.pdf")
+ ggsave(p1, file="../../FIGS/fig:lengthAgeFit.png")
 
-p  <- ggplot(DF, aes(age, fl, col=area)) +geom_point(size=1.25)
-#p  <- p + theme(axis.title = element_text(size = rel(2)))
-p  <- p + geom_line(aes(age, fl_hat, col=area), size=1.25) + facet_wrap(~sex)
-p  <- p + labs(col="Regulatory\nArea") + xlab("Age (years)") + ylab("Fork length (cm)")
-p2 <- p
+p  <- ggplot(DF, aes(age, fl_hat, shape=area)) +geom_point(size=1.5) + scale_shape_manual(values=c(1:9))
+p  <- p + geom_line(aes(age, fl_hat), size=0.25) + facet_wrap(~sex, ncol=1)
+p  <- p + labs(shape="Area", linetype="Area") + xlab("Age (years)") + ylab("Fork length (cm)")
+p2 <- p + theme_bw(12)
 ggsave(p2, file="../../FIGS/fig:lengthAgeFitbySex.pdf")
+ggsave(p2, file="../../FIGS/fig:lengthAgeFitbySex.png")
 
 p  <- ggplot(DF, aes(factor(age), epsilon, col=sex))+geom_boxplot(outlier.size = 0.2)
 p  <- p + facet_wrap(~area) + labs(col="Sex")+xlab("Age (years)")+ylab("Residual fork length (cm)")

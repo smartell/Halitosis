@@ -636,7 +636,7 @@ for(i in ss)
 # | p.ye  = equilibrium yield
    RELSIZE <- 1.5
    graphics.off()
-   quartz("Size at age", width=8.25, height=7)
+   quartz("Size at age", width=10, height=7)
 
 # |---------------------------------------------------------------------------|
 # | Plot size at age data
@@ -695,10 +695,14 @@ p.dpr <- p.dpr + facet_wrap(~Area)
 # |---------------------------------------------------------------------------|
 # | Percent wastage versus fishing mortality
 # |---------------------------------------------------------------------------|
-p.de  <- ggplot(subset(DF, Scenario==c(1, 2, 4))) + geom_line(aes(x=fe, y=de/ye, col=factor(Scenario)))#+ ylim(c(0, 1))
-p.de  <- p.de + labs(x="Fishing mortality rate", y="Percent wastage (dead discards/landed catch)", col="Scenario")
-p.de  <- p.de + facet_wrap(~Area)
+sDF   <- subset(DF, Scenario==c(1, 2, 4))
+pDF   <- subset(sDF, fe%in%fe[pp])
+p.de  <- ggplot(sDF) + geom_line(aes(x=fe, y=de/ye*100, shape=factor(Scenario), linetype=factor(Scenario)), size=0.25)
+p.de  <- p.de + geom_point(data=pDF, aes(x=fe, y=de/ye*100, shape=factor(Scenario)))
+p.de  <- p.de + labs(x="Fishing mortality rate", y="Percent wastage (dead discards/landed catch)", shape="Scenario", linetype="Scenario")
+p.de  <- p.de + facet_wrap(~Area) + theme_bw(12)
 ggsave(p.de, file="../FIGS/fig:PercentWastage.pdf")
+ggsave(p.de, file="../FIGS/fig:PercentWastage.png")
 
 
 # |---------------------------------------------------------------------------|
@@ -733,15 +737,19 @@ p.spr <- p.spr + facet_wrap(~Area)
 p.ye <- ggplot(subset(subset(DF, Scenario==1), Area=="2B")) + geom_line(aes(x=fe, y=ye), size=1.5)
 p.ye <- p.ye + labs(x="Fishing Mortality Rate", y="Equilibrium Yield") + ylim(c(0, 10))
 p.ye2B <- p.ye
-SIZE <- 1.00
+SIZE <- 0.25
+pp   <- seq(1,length(fe),by=15)
 
 sDF  <- subset(DF, Scenario==1)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
-p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+pDF  <- subset(sDF, fe%in%fe[pp])
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(data=pDF, aes(x=fe, y=ye, shape=Area), size=2)
+p.ye <- p.ye + scale_shape_manual(values=c(1:9))
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
-p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
-p.ye1 <- p.ye
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, shape=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye1 <- p.ye + theme_bw(12)
 ggsave(p.ye1, file="../FIGS/fig:YeBase.pdf")
+ggsave(p.ye1, file="../FIGS/fig:YeBase.png")
 
 
 sDF  <- subset(DF, Scenario==2)
@@ -801,13 +809,15 @@ p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arr
 p.ye9 <- p.ye
 
 
-
-p.ye <- ggplot(DF ) + geom_line(aes(x=fe, y=ye, col=Area), size=0.5) + ylim(c(0, 10))
-#p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
+pDF  <- subset(DF, fe%in%fe[pp])
+p.ye <- ggplot(DF) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- p.ye + geom_point(data=pDF, aes(x=fe, y=ye, shape=Area), size=1.5)
+p.ye <- p.ye + scale_shape_manual(values=c(1:9))
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
-p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
-p.yeAll <- p.ye + facet_wrap(~Scenario)
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, shape=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.yeAll <- p.ye + facet_wrap(~Scenario) + theme_bw(12)
 ggsave(p.yeAll, file="../FIGS/fig:YeALL.pdf")
+ggsave(p.yeAll, file="../FIGS/fig:YeALL.png")
 
 
 #p.ye <- p.ye + geom_vline(xintercept=-log(1-c(0.161, 0.215)), size=0.2,  col=c(1, 2) )
@@ -832,12 +842,13 @@ ggsave(p.yeAll, file="../FIGS/fig:YeALL.pdf")
    icol          <- c(1, 2, 3, match(iage, names(sDF)))
    mDF           <- melt(sDF[icol],id.vars=c("Area","fe","sex"))
 
-   p.wbar_f <- ggplot(mDF,aes(x=fe,y=value,group=variable, col=variable))+geom_line()+xlim(c(0, 0.75))
+   p.wbar_f <- ggplot(mDF,aes(x=fe,y=value,group=variable, linetype=variable)) 
+   p.wbar_f <- p.wbar_f + geom_line(size=0.5) +xlim(c(0, 0.75))
    p.wbar_f <- p.wbar_f + labs(x="Fishing mortality rate", y="Mean weight-at-age (lb)")
-   #p.wbar_f <- p.wbar_f + theme(axis.title = element_text(size = rel(RELSIZE)))
-   p.wbar_f <- p.wbar_f + labs(color="Age")
-   p.wbar_f <- p.wbar_f + facet_wrap(~Area)
+   p.wbar_f <- p.wbar_f + labs(linetype="Age")
+   p.wbar_f <- p.wbar_f + facet_wrap(~Area) + theme_bw(12)
    ggsave(p.wbar_f, file="../FIGS/fig:wbar_female.pdf")
+   ggsave(p.wbar_f, file="../FIGS/fig:wbar_female.png")
 
 
 # |---------------------------------------------------------------------------|

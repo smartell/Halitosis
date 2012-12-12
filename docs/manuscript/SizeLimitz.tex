@@ -3,7 +3,7 @@
 %
 %  Created by Martell on 2012-09-05.
 %  Copyright (c) 2012 UBC Fisheries Centre. All rights reserved.
-\documentclass[12pt]{article}
+\documentclass[12pt,leqno]{article}
 %\documentclass[leqno,author,preprint]{nrc2}
 
 % %% Journal-specific information for opening page -- pp.9-11 of guide:
@@ -70,27 +70,36 @@
 % This is now the recommended way for checking for PDFLaTeX:
 \usepackage{ifpdf}
 
-%\newif\ifpdf
-%\ifx\pdfoutput\undefined
-%\pdffalse % we are not running PDFLaTeX
-%\else
-%\pdfoutput=1 % we are running PDFLaTeX
-%\pdftrue
-%\fi
+% \newif\ifpdf
+% \ifx\pdfoutput\undefined
+% \pdffalse % we are not running PDFLaTeX
+% \else
+% \pdfoutput=1 % we are running PDFLaTeX
+% \pdftrue
+% \fi
 
 \ifpdf
 \usepackage[pdftex]{graphicx}
 \else
 \usepackage{graphicx}
 \fi
+
+% Endfloat package for putting figures and tables at the end of the document
+% options nofiglist,notablist,nomarkers,tablesfirst
+\usepackage[notablist,nomarkers,tablesfirst]{endfloat}
+
+% Rotating for sideways figures and tables
+% \usepackage{rotating}
+
 %\title{Impacts of size limits, release mortality, growth variation, and cumulative fishing mortality on the harvest policy for Pacific halibut}
 \title{Optimal harvest rates for Pacific halibut}
-\author{ Steven Martell, Ian Stewart, Ray Webster, and Bruce Leaman }
+\author{ Steven Martell, Ian Stewart, and Bruce Leaman }
 %\address{International Pacific Halibut Commission}
 
 \date{2012-09-05}
 
 \begin{document}
+
 
 \ifpdf
 \DeclareGraphicsExtensions{.pdf, .jpg, .tif}
@@ -104,7 +113,7 @@
 \begin{abstract}
 	% Harvesting fish is inherently a size-selective process where faster growing individuals recruit to fishing gear at younger ages.  As a consequence of size-selective fishing, faster growing individuals in a given cohort are subject to higher fishing mortality rates than slower growing individuals.  This results in a reduction in the mean size-at-age relative to an unfished population that exhibits the same growth rate.  Limits on the size of fish that can be retained in the fishery can protect spawning biomass, if and only if, release mortality rates are very low.  Release mortality is the fraction of individuals that die after capture and release.  If the release mortality rates are substantially greater than 0, limiting the legal size range could have a negative impact on future yield and spawning biomass if fishing mortality rates are sufficiently high.   Cumulative effects of size-selective fishing are amplified if release mortality rates are high and the minimum size limit is much greater than the size-at-entry to the fishery.  In addition to discards from the directed fishery, accounting for discards associated with non-directed fisheries also lowers estimates of optimal fishing mortality rates.  If bycatch mortality does not scale with overall population size (i.e., a constant amount of bycatch each year), then optimal harvest rates in the directed fishery must be reduced further to account for depensatory mortality rates in non-directed fisheries. 
 	
-Key to determining the optimal harvest rate that maximizes the long-term sustainable yield is having knowledge of stock productivity and what age, or size, of fish are being harvested by all fishing sectors.  Recent size-at-age data and changes in the stock assessment model for Pacific halibut have resulted in changes in productivity and changes in selectivity for both directed fisheries and survey selectivity.  Previous estimates of optimal exploitation rates are outdated and need to be revised.  We develop an age- sex- and size-structured equilibrium model to investigate how variation in growth, changes in size-selectivity, size-limits, and how bycatch impacts estimates of optimal exploitation rates in each of the Regulatory Areas for Pacific halibut.  Differences in growth rates between regulatory areas translate into as much as a 40\% difference in yield per recruit.  A maximum size limit of 140cm results in little to no benefit of protecting spawning stock biomass under the current discard mortality rate of 16\%.  In the absence of size limits, over all yield per recruit increases but at expense of reducing spawning biomass and the composition of the catch consists of smaller fish.  Optimal harvest rates would have to be adjusted downwards to compensate for the loss of spawning biomass.  Undetected shifts in commercial selectivity towards capturing smaller/younger fish results in an upward bias in the estimates of optimal harvest rates.  A reduction in bycatch rates in non-directed fisheries can lead to desirable increases in optimal exploitation rates. Conversely, unreported bycatch results in an upward bias in optimal exploitation rates.  The optimal harvest rate is very sensitive to estimates of natural mortality, steepness and fisheries selectivity. The harvest control rule should be updated with changes in model structure and updated parameter estimates to ensure the harvest policy is kept up to date.
+Key to determining the optimal harvest rate that maximizes the long-term sustainable yield is having knowledge of stock productivity and what age, or size, of fish are being harvested by all fishing sectors.  Recent size-at-age data and changes in the stock assessment model for Pacific halibut have resulted in changes in estimated productivity and selectivity for both directed fisheries and survey selectivity.  Previous estimates of optimal exploitation rates are outdated and need to be revised.  We develop an age- sex- and size-structured equilibrium model to investigate how variation in growth, changes in size-selectivity, size-limits, and bycatch impact estimates of optimal exploitation rates in each of the Regulatory Areas for Pacific halibut.  Differences in growth rates between regulatory areas translate into as much as a 40\% difference in yield per recruit.  A maximum size limit of 140 cm results in little to no benefit of protecting spawning stock biomass under the current discard mortality rate of 16\%.  In the absence of size limits, over all yield per recruit increases but at the expense of reducing spawning biomass and changing the composition of the catch towards smaller fish.  Optimal harvest rates would have to be adjusted downwards to compensate for the loss of spawning biomass.  Undetected shifts in commercial selectivity towards capturing smaller/younger fish results in an upward bias in the estimates of optimal harvest rates.  A reduction in bycatch rates in non-directed fisheries can lead to desirable increases in optimal exploitation rates. Conversely, unreported bycatch results in an upward bias in optimal exploitation rates.  The optimal harvest rate is very sensitive to estimates of natural mortality, steepness of the stock-recruit relationship, and fisheries selectivity. The harvest control rule should be updated with changes in model structure and updated parameter estimates to ensure the harvest policy is kept up to date.  Results presented are preliminary and include a number of simplifying assumptions.  Recommendations concerning revisions to the optimum harvest rate will be developed over the coming year.
 
 \end{abstract}
 
@@ -114,7 +123,7 @@ Key to determining the optimal harvest rate that maximizes the long-term sustain
 \input{./Discussion/Discussion.tex}
 
 \section*{Acknowledgements}
-The authors would like to thank the following persons for discussions about harvest policy for Pacific halibut: Steven Hare, Juan Valero, Robyn Forrest and Jim Ianelli.  Also, comments from several IPHC staff including Claude Dykstra, Heather Gilroy, Stephen Keith and Gregg Williams during earlier presentations of this work are greatly appreciated and have led to many refinements in this work.  Special thanks to Aaron Ranta  and Jay Walker for helping with database queries and technical support.
+The authors would like to thank the following persons for discussions about harvest policy for Pacific halibut: Steven Hare, Juan Valero, Robyn Forrest and Jim Ianelli.  Also, comments from several IPHC staff including  Ray Webster, Claude Dykstra, Heather Gilroy, Stephen Keith and Gregg Williams during earlier presentations of this work are greatly appreciated and have led to many refinements in this work.  Special thanks to Aaron Ranta  and Jay Walker for helping with database queries and technical support.
 
 \addcontentsline{toc}{section}{References}
 \bibliographystyle{apalike}
