@@ -3,7 +3,7 @@
 # Written by Steve Martell,  IPHC
 # Date: Jan 8, 2012
 # DATE: November 5,  2012.  Re-organization of the code
-# CODE ORGANIZATION
+# CODE ORGANIZATIONn
 # 	Dependencies.
 #   Read in external results from growth parameter estimatation,  selectivities.
 #   PSEUDOCODE:
@@ -27,7 +27,7 @@
 # 5) Bycatch fishing mortality rates from 0.02 to 0.153
 # 6) Size-specific natural mortality rates.
 # -------------------------------------------------------------------------- ##
-
+  setwd("/Users/stevenmartell1/Documents/IPHC/SizeLimitz/Halitosis/")
 # |---------------------------------------------------------------------------|
 # | Libraries
 # |---------------------------------------------------------------------------| 
@@ -95,8 +95,7 @@
    h		<- 0.95				# steepness
    dm		<- 0.16				# discard mortality rate
    cm		<- 0				# Size-dependent natural mortality rate (-0.5, 0.5)
-   
-   
+     
 
 # |---------------------------------------------------------------------------|
 # | Assesemble Regulatory area LIST OBJECT                          
@@ -114,6 +113,8 @@
 	
 	
 	# Get growth parameters by regArea
+	j = 4
+	i   = 9 
 	ii <- match(regArea, RA)
 	linf <- GM$linf[, ii]
 	k    <- GM$vbk[, ii]
@@ -636,7 +637,7 @@ for(i in ss)
 # | p.ye  = equilibrium yield
    RELSIZE <- 1.5
    graphics.off()
-   quartz("Size at age", width=10, height=7)
+   quartz("Size at age", width=7.92, height=6.72)
 
 # |---------------------------------------------------------------------------|
 # | Plot size at age data
@@ -695,8 +696,9 @@ p.dpr <- p.dpr + facet_wrap(~Area)
 # |---------------------------------------------------------------------------|
 # | Percent wastage versus fishing mortality
 # |---------------------------------------------------------------------------|
+jj    <- seq(1,length(fe),by=15)
 sDF   <- subset(DF, Scenario==c(1, 2, 4))
-pDF   <- subset(sDF, fe%in%fe[pp])
+pDF   <- subset(sDF, fe%in%fe[jj])
 p.de  <- ggplot(sDF) + geom_line(aes(x=fe, y=de/ye*100, shape=factor(Scenario), linetype=factor(Scenario)), size=0.25)
 p.de  <- p.de + geom_point(data=pDF, aes(x=fe, y=de/ye*100, shape=factor(Scenario)))
 p.de  <- p.de + labs(x="Fishing mortality rate", y="Percent wastage (dead discards/landed catch)", shape="Scenario", linetype="Scenario")
@@ -735,82 +737,89 @@ p.spr <- p.spr + facet_wrap(~Area)
 # | Equilibrium Yield                                               
 # |---------------------------------------------------------------------------|
 p.ye <- ggplot(subset(subset(DF, Scenario==1), Area=="2B")) + geom_line(aes(x=fe, y=ye), size=1.5)
-p.ye <- p.ye + labs(x="Fishing Mortality Rate", y="Equilibrium Yield") + ylim(c(0, 10))
+p.ye <- p.ye + labs(x="Fishing Mortality Rate", y="Equilibrium Yield") + ylim(c(0, 8))
 p.ye2B <- p.ye
-SIZE <- 0.25
-pp   <- seq(1,length(fe),by=15)
+SIZE <- 1.5
+jj   <- seq(1,length(fe),by=10)
 
+DF   <- subset(DF,Area==c("2B","3A","4A")) #Comment out for paper.
 sDF  <- subset(DF, Scenario==1)
-pDF  <- subset(sDF, fe%in%fe[pp])
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 10))
+pDF  <- subset(sDF, fe%in%fe[jj])
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(data=pDF, aes(x=fe, y=ye, shape=Area), size=2)
 p.ye <- p.ye + scale_shape_manual(values=c(1:9))
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, shape=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye1 <- p.ye + theme_bw(12)
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
+p.ye <- p.ye + geom_point(data=pDF, aes(x=fe, y=ye, col=Area), size=2)
+p.ye <- p.ye + scale_shape_manual(values=c(1:9))
+p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
+p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
+p.ye1a<-p.ye
 ggsave(p.ye1, file="../FIGS/fig:YeBase.pdf")
 ggsave(p.ye1, file="../FIGS/fig:YeBase.png")
 
 
 sDF  <- subset(DF, Scenario==2)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye2 <- p.ye
 
 sDF  <- subset(DF, Scenario==3)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye3 <- p.ye
 
 sDF  <- subset(DF, Scenario==4)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye4 <- p.ye 
 
 sDF  <- subset(DF, Scenario==5)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye5 <- p.ye 
 
 sDF  <- subset(DF, Scenario==6)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye6 <- p.ye 
 
 sDF  <- subset(DF, Scenario==7)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye7 <- p.ye 
 
 sDF  <- subset(DF, Scenario==8)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye8 <- p.ye
 
 sDF  <- subset(DF, Scenario==9)
-p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 10))
+p.ye <- ggplot(sDF ) + geom_line(aes(x=fe, y=ye, col=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(aes(x=fe, y=ye, shape=Area, col=Area), size=2)
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
 p.ye <- p.ye + geom_segment(aes(x=Fmsy, y=msy, xend=Fmsy, yend=0, col=Area), arrow=arrow(length=unit(.2, "cm")), size=0.25, linetype=1)
 p.ye9 <- p.ye
 
 
-pDF  <- subset(DF, fe%in%fe[pp])
-p.ye <- ggplot(DF) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 10))
+pDF  <- subset(DF, fe%in%fe[jj])
+p.ye <- ggplot(DF) + geom_line(aes(x=fe, y=ye, shape=Area), size=SIZE) + ylim(c(0, 8))
 p.ye <- p.ye + geom_point(data=pDF, aes(x=fe, y=ye, shape=Area), size=1.5)
 p.ye <- p.ye + scale_shape_manual(values=c(1:9))
 p.ye <- p.ye + labs(x="Fishing mortality rate", y="Relative yield")
