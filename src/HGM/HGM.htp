@@ -1,0 +1,108 @@
+#if !defined(_HGM_)
+#  define _HGM_
+
+class model_data : public ad_comm{
+  data_int nbin;
+  data_int nage;
+  data_int narea;
+  data_int nsex;
+  data_vector ilen;
+  data_vector jage;
+  int a1;
+  int a2;
+  data_4array data;
+  ~model_data();
+  model_data(int argc,char * argv[]);
+  friend class model_parameters;
+};
+
+class model_parameters : public model_data ,
+  public function_minimizer
+{
+public:
+  ~model_parameters();
+  void preliminary_calculations(void);
+  void set_runtime(void);
+  virtual void * mycast(void) {return (void*)this;}
+  static int mc_phase(void)
+  {
+    return initial_params::mc_phase;
+  }
+  static int mceval_phase(void)
+  {
+    return initial_params::mceval_phase;
+  }
+  static int sd_phase(void)
+  {
+    return initial_params::sd_phase;
+  }
+  static int current_phase(void)
+  {
+    return initial_params::current_phase;
+  }
+  static int last_phase(void)
+  {
+    return (initial_params::current_phase
+      >=initial_params::max_number_phases);
+  }
+  static prevariable current_feval(void)
+  {
+    return *objective_function_value::pobjfun;
+  }
+private:
+  ivector integer_control_flags;
+  dvector double_control_flags;
+  param_init_vector log_mu_l1;
+  param_init_vector log_mu_l2;
+  param_init_vector log_mu_rho;
+  param_init_vector log_mu_lam1;
+  param_init_vector log_mu_lam2;
+  param_init_bounded_vector log_mu_lhat;
+  param_init_bounded_vector log_sd_lhat;
+  param_init_bounded_matrix log_l1_dev;
+  param_init_bounded_matrix log_l2_dev;
+  param_init_bounded_matrix log_rho_dev;
+  param_init_bounded_matrix log_lam1_dev;
+  param_init_bounded_matrix log_lam2_dev;
+  param_init_bounded_matrix log_lhat_dev;
+  param_init_bounded_matrix log_sdlh_dev;
+  param_init_bounded_matrix log_Z;
+  param_number prior_function_value;
+  param_number likelihood_function_value;
+  objective_function_value f;
+  param_number fpen;
+  param_matrix l1;
+  param_matrix l2;
+  param_matrix rho;
+  param_matrix lam1;
+  param_matrix lam2;
+  param_matrix lhat;
+  param_matrix sdlh;
+  param_matrix Z;
+  param_matrix lvec;
+  param_matrix pvec;
+  param_3array mu_la;
+  param_3array sd_la;
+  param_3array pa;
+  param_3array sl;
+  param_4array P;
+  param_4array V;
+public:
+  virtual void userfunction(void);
+  virtual void report(void);
+  virtual void final_calcs(void);
+  model_parameters(int sz,int argc, char * argv[]);
+  virtual void initializationfunction(void);
+  void calcObjectiveFunction(void);
+  void calcPredictedObservations(void);
+  void calcSizeSelectivity(void);
+  void calcAgeProportions(void);
+  void calcLengthAtAge(void);
+  void calcLengthAgeTransition(void);
+ dvar_vector dev_vector(dvar_vector &x, dvariable &pen);
+ dvariable dnbinom(const dvector& x, const dvar_vector& mu, const double& k);
+ dvariable dnorm( const dvariable& x, const prevariable& mu, const prevariable& std );
+ dvariable dnorm( const dvariable& x, const prevariable& mu, const double& std );
+
+};
+#endif
