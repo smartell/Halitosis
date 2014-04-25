@@ -7,7 +7,7 @@
 
 
 
-  setwd("/Users/stevenmartell1/Documents/IPHC/SizeLimitz/SRC/HALITOSISII/")
+  setwd("/Users/Jane/Documents/GitHub/Halitosis/src/HALITOSISII/")
 # |---------------------------------------------------------------------------|
 # | Libraries
 # |---------------------------------------------------------------------------| 
