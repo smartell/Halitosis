@@ -273,103 +273,155 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # | fe is the equilibrium fishing mortality rate.
 .asem <- function(fe=0, Stock, ct=0)
 {
-	# | Psuedocode:
-	# | 1. Calculate age-specific total mortality, retention, and discard rates
-	# | 2. Calculate survivorship with fe>0.
-	# | 3. Calculate equilibrium recruitment (re) and biomass (be)
-	# | 4. Calculate yield per recruit,  spawning biomass per recruit,  yield, discards.
-	# | 5. Calculate average weight-at-age.
-	with(Stock, {
-		# 1. Age-specific total mortality, survival, retention, and discard rate.
-		za	<- array(0, dim)
-		sa	<- array(0, dim)
-		qa	<- array(0, dim)
-		da	<- array(0, dim)
-		
-		bycatch <- ct
-		bapprox <- bo * 0.15/(0.15+fe)
-		fd      <- bycatch/bapprox
-		#if(ct>0)
-		#cat("fe = ", fe, " fd = ", fd, "\n")
-		
-		for(i in 1:S)
-		{
-			za[,,i]  <- M[,,i] + fe*va[,,i] + fd*vd[,,i]
-			sa[,,i]  <- exp(-za[,,i])
-			qa[,,i]  <- (sc[,,i]*sr[,,i]) * (1-sa[,,i])/za[,,i]
-			da[,,i]  <- (sc[,,i]*sd[,,i]) * (1-sa[,,i])/za[,,i]
-		}
-		
-		# 2. Survivorship under fished conditions lz(A, G, S)
-		lz	<- array(1, dim)
-		for(i in 1:S)
-		{
-			for(j in 2:A)
-			{
-				lz[j,,i] <- lz[j-1,,i]*exp(-za[j-1,,i])
-			}
-			lz[A,,i] <- lz[A,,i]/(1-exp(-za[A,,i]))
-		}
-		
-		# 3. Calculate equilibrium recruitment and biomass
-		phi.e	<- sum( t(lz[,,1]*fa[,,1])*pg )
-		# Beverton-Holt model
-		t1      <- phi.E/phi.e
-		t2      <- (kap-t1)
-		re      <- max(0, ro*t2/(kap-1))
-		
-		# Ricker model
-		#t1		<- log(phi.E/(kap*phi.e))
-		#t2		<- (log(kap)*phi.e)
-		#re		<- max(0, -(t1*ro*phi.E)/t2)
-		
-		be		<- re * phi.e
-		
-		# 4. Calculate yield per recruit,  spawning biomass per recruit,  yield, discards.
-		ye		<- 0
-		ne      <- 0
-		de		<- 0
-		ypr		<- 0
-		dpr     <- 0
-		bpr     <- 0
-		spr		<- phi.e/phi.E
-		for(i in 1:S)
-		{
-
-			ye  <- ye + sum( re * fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
-			ne  <- ne + sum( re * fe * t(lz[,,i]*qa[,,i])*pg )
-			de	<- de + sum( re * fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
-			bpr <- bpr + sum( t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
-			ypr <- ypr + sum( fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
-			dpr <- dpr + sum( fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
-		}
-		cbar <- ye / ne
-		
-		# 5. Calculate average weight-at-age
-		wbar <- matrix(0, nrow=S, ncol=A)
-		for(i in 1:S)
-		{
-			tmp      <- lz[,,i]/rowSums(lz[,,i])
-			wbar[i,] <- rowSums(wa[,,i]*tmp)
-		}
-		
-		# 6. Calculate average weight of the landed catch.
-
-		Stock$lz   <- lz
-		Stock$re   <- re
-		Stock$be   <- be
-		Stock$ye   <- ye
-		Stock$de   <- de
-		Stock$bpr  <- bpr
-		Stock$ypr  <- ypr
-		Stock$spr  <- spr
-		Stock$dpr  <- dpr
-		Stock$wbar <- wbar
-		Stock$cbar <- cbar
-		
-		return(Stock)
-	})
+  # | Psuedocode:
+  # | 1. Calculate age-specific total mortality, retention, and discard rates
+  # | 2. Calculate survivorship with fe>0.
+  # | 3. Calculate equilibrium recruitment (re) and biomass (be)
+  # | 4. Calculate yield per recruit,  spawning biomass per recruit,  yield, discards.
+  # | 5. Calculate average weight-at-age.
+  with(Stock, {
+    # 1. Age-specific total mortality, survival, retention, and discard rate.
+    za	<- array(0, dim) #Age-specific total mortality
+    sa	<- array(0, dim) # age-spec survival
+    qa	<- array(0, dim) #age specific yield in weight ??
+    da	<- array(0, dim) #age-specific discard
+    ta  <- array(0, dim) # yield per recruit in trawl discard fishery.
+    
+    bycatch <- ct
+    # bapprox <- bo * 0.15/(0.15+fe)
+    # fd      <- bycatch/bapprox
+    fd      <- 0;
+    #if(ct>0)
+    #cat("fe = ", fe, " fd = ", fd, "\n")
+    
+    ### 
+    for(iter in 1:25)
+    {
+      
+      
+      for(i in 1:S)
+      {
+        za[,,i]  <- M[,,i] + fe*va[,,i] + fd*vd[,,i]
+        sa[,,i]  <- exp(-za[,,i])
+        qa[,,i]  <- (sc[,,i]*sr[,,i]) * (1-sa[,,i])/za[,,i]
+        da[,,i]  <- (sc[,,i]*sd[,,i]) * (1-sa[,,i])/za[,,i]
+        ta[,,i]  <- (vd[,,i])         * (1-sa[,,i])/za[,,i]
+      }
+      
+      # 2. Survivorship under fished conditions lz(A, G, S)
+      lz	<- array(1, dim)
+      for(i in 1:S)
+      {
+        for(j in 2:A)
+        {
+          lz[j,,i] <- lz[j-1,,i]*exp(-za[j-1,,i])
+        }
+        lz[A,,i] <- lz[A,,i]/(1-exp(-za[A,,i]))
+      }
+      
+      # 3. Calculate equilibrium recruitment and biomass
+      phi.e	<- sum( t(lz[,,1]*fa[,,1])*pg )
+      # Beverton-Holt model
+      t1      <- phi.E/phi.e
+      t2      <- (kap-t1)
+      re      <- max(0, ro*t2/(kap-1))
+      # Ricker model
+      #t1		<- log(phi.E/(kap*phi.e))
+      #t2		<- (log(kap)*phi.e)
+      #re		<- max(0, -(t1*ro*phi.E)/t2)
+      
+      be		<- re * phi.e
+      if(re ==0 ) break();
+      
+      # 3b. Calculate bycatch per recruit to determine F in bycatch fisheries.
+      de      <- 0          
+      for(i in 1:S)
+      {
+        de	<- de + re * sum( t(lz[,,i]*wa[,,i]*ta[,,i])*pg )  # ta = yield per recruit in trawl discard fishery.
+      }
+      if(bycatch < de)
+        fd <- -log(1.0-bycatch/de)
+      else
+        fd <- -log(0.01) 
+      # cat("fd = ",fd,"\t de = ",de,"re = ",re," \n")
+    }
+    # 4. Calculate yield per recruit, spawning biomass per recruit,  yield, discards.
+    ye		<- 0 #eqb yield in dir fishery
+    ne    <- 0   #eqb numbers
+    de		<- 0 #eqb discards
+    we    <- 0   #eqb wastage
+    yev   <- 0   #eqb value of yield in dir fishery
+    dev   <- 0   # Value of wastage.
+    byv   <- 0 	 # Value of discarded bycatch.
+    ypr		<- 0 #yield per recruit in dir fishery
+    # 		lpr   <- 	#length per recruit
+    dpr   <- 0   #discarded fish in dir fishery (live and dead)
+    wpr   <- 0   #wastage per recruit in dir fishery
+    bpr   <- 0   #biomass per recruit available to the dir fishery (Ebio)
+    spr		<- phi.e/phi.E #spawning potential ratio (spr)
+    for(i in 1:S)
+    {
+      
+      ye  <- ye + sum( re * fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
+      ne  <- ne + sum( re * fe * t(lz[,,i]*qa[,,i])*pg )
+      we	<- we + sum( re * fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
+      de	<- de + sum( re * fe * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
+      bpr <- bpr + sum( t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
+      ypr <- ypr + sum( fe * t(lz[,,i]*wa[,,i]*qa[,,i])*pg )
+      # 			lpr <- lpr + sum( fe * t(lz[,,i]*la[,,i]*qa[,,i])*pg )
+      dpr <- dpr + sum( fe * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
+      wpr <- wpr + sum( fe * dm * t(lz[,,i]*wa[,,i]*da[,,i])*pg )
+      n18 <- re * fe * t(lz[18,,i]*qa[,,i])*pg
+      
+      #
+      # landed value of retained fish.
+      #
+      yev <- yev + sum( re * fe * t(lz[,,i]*wa[,,i]*qa[,,i]*pa[,,i])*pg )
+      # 
+      # value of discarded fish.
+      # 
+      dev <- dev + sum( re * fe * t(lz[,,i]*wa[,,i]*da[,,i]*pa[,,i])*pg )
+      #
+      # value of bycaught fish
+      #
+      byv <- byv + sum( re * fd * t(lz[,,i]*wa[,,i]*ta[,,i]*pa[,,i])*pg )
+    }
+    cbar <- ye / ne  #average weight of catch
+    
+    # 5. Calculate average weight-at-age
+    wbar <- matrix(0, nrow=S, ncol=A)
+    for(i in 1:S)
+    {
+      tmp      <- lz[,,i]/rowSums(lz[,,i]) #average weighted by survivorship, transforming surv to a probability
+      wbar[i,] <- rowSums(wa[,,i]*tmp)
+    }
+    
+    
+    # 6. Calculate average weight of the landed catch.
+    
+    Stock$lz   <- lz
+    Stock$re   <- re
+    Stock$be   <- be
+    Stock$ye   <- ye
+    Stock$de   <- de
+    Stock$we   <- we
+    Stock$fd   <- fd
+    Stock$bpr  <- bpr
+    Stock$ypr  <- ypr
+    Stock$spr  <- spr
+    Stock$dpr  <- dpr
+    Stock$wpr  <- wpr
+    Stock$wbar <- wbar
+    Stock$cbar <- cbar
+    Stock$yev  <- yev 
+    Stock$dev  <- dev
+    Stock$byv  <- byv
+    
+    
+    return(Stock)
+  })
 }
+
 
 # |---------------------------------------------------------------------------|
 # | Calculate equilibrium values for a given fe vector              
