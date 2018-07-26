@@ -430,28 +430,80 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # | frame with columns: fe ye be re de ypr spr
 .calcEquilibrium <- function(Stock, Scenario=NULL, bycatch=0)
 {
-	with(Stock, {
-		# Proto-type function to get equilibrium vector.
-		fn <- function(fe)
-		{
-			tmp <- .asem(fe, Stock, bycatch)
-			out <- c(fe=fe, ye=tmp$ye, be=tmp$be, de=tmp$de, 
-				re=tmp$re, spr=tmp$spr, ypr=tmp$ypr, 
-				bpr=tmp$bpr, dpr=tmp$dpr)
-			
-			# average weight arrays
-			wbar_f <- c(wbar=tmp$wbar[1,])
-			wbar_m <- c(wbar=tmp$wbar[2,])
-			
-			out <- c(out, wbar_f=wbar_f, wbar_m=wbar_m, Scenario=Scenario)
-			return(out)
-		}
-		
-		xx <- sapply(fe, fn)
-		Stock$equil <- as.data.frame(t(xx))
-		
-		return(Stock)
-	})
+  with(Stock, {
+    # Proto-type function to get equilibrium vector.
+    fn <- function(fe)
+    {
+      tmp <- .asem(fe, Stock, bycatch)
+      out <- c(fe=fe, ye=tmp$ye, be=tmp$be, de=tmp$de, we=tmp$we,
+               re=tmp$re, spr=tmp$spr, ypr=tmp$ypr, fd = tmp$fd,
+               bpr=tmp$bpr, dpr=tmp$dpr,wpr=tmp$wpr)
+      
+      # average weight arrays
+      wbar_f1 <- c(wbar=tmp$wbar[1,])
+      wbar_f2 <- c(wbar=tmp$wbar[1,])
+      wbar_f3 <- c(wbar=tmp$wbar[1,])
+      wbar_f4 <- c(wbar=tmp$wbar[1,])
+      wbar_f5 <- c(wbar=tmp$wbar[1,])
+      wbar_f6 <- c(wbar=tmp$wbar[1,])
+      wbar_f7 <- c(wbar=tmp$wbar[1,])
+      wbar_f8 <- c(wbar=tmp$wbar[1,])
+      wbar_f9 <- c(wbar=tmp$wbar[1,])
+      wbar_f10 <- c(wbar=tmp$wbar[1,])
+      wbar_f11 <- c(wbar=tmp$wbar[1,])
+      wbar_f12 <- c(wbar=tmp$wbar[1,])
+      wbar_f13 <- c(wbar=tmp$wbar[1,])
+      wbar_f14 <- c(wbar=tmp$wbar[1,])
+      wbar_f15 <- c(wbar=tmp$wbar[1,])
+      wbar_f16 <- c(wbar=tmp$wbar[1,])
+      wbar_f17 <- c(wbar=tmp$wbar[1,])
+      wbar_f18 <- c(wbar=tmp$wbar[1,])
+      wbar_f19 <- c(wbar=tmp$wbar[1,])
+      wbar_f20 <- c(wbar=tmp$wbar[1,])
+      
+      wbar_m1 <- c(wbar=tmp$wbar[2,])
+      wbar_m2 <- c(wbar=tmp$wbar[2,])
+      wbar_m3 <- c(wbar=tmp$wbar[2,])
+      wbar_m4 <- c(wbar=tmp$wbar[2,])
+      wbar_m5 <- c(wbar=tmp$wbar[2,])
+      wbar_m6 <- c(wbar=tmp$wbar[2,])
+      wbar_m7 <- c(wbar=tmp$wbar[2,])
+      wbar_m8 <- c(wbar=tmp$wbar[2,])
+      wbar_m9 <- c(wbar=tmp$wbar[2,])
+      wbar_m10 <- c(wbar=tmp$wbar[2,])
+      wbar_m11 <- c(wbar=tmp$wbar[2,])
+      wbar_m12 <- c(wbar=tmp$wbar[2,])
+      wbar_m13 <- c(wbar=tmp$wbar[2,])
+      wbar_m14 <- c(wbar=tmp$wbar[2,])
+      wbar_m15 <- c(wbar=tmp$wbar[2,])
+      wbar_m16 <- c(wbar=tmp$wbar[2,])
+      wbar_m17 <- c(wbar=tmp$wbar[2,])
+      wbar_m18 <- c(wbar=tmp$wbar[2,])
+      wbar_m19 <- c(wbar=tmp$wbar[2,])
+      wbar_m20 <- c(wbar=tmp$wbar[2,])
+      
+      
+      
+      out <- c(out, wbar_f1=wbar_f1,wbar_f2=wbar_f2,wbar_f3=wbar_f3,wbar_f4=wbar_f4, wbar_f5=wbar_f5,
+               wbar_f6=wbar_f6,wbar_f7=wbar_f7,wbar_f8=wbar_f8,wbar_f9=wbar_f9,wbar_f10=wbar_f10,
+               wbar_f11=wbar_f11,wbar_f12=wbar_f12,wbar_f13=wbar_f13,wbar_f14=wbar_f14,wbar_f15=wbar_f15,
+               wbar_f16=wbar_f16,wbar_f17=wbar_f17,wbar_f18=wbar_f18,wbar_f19=wbar_f19,wbar_f20=wbar_f20, 
+               
+               wbar_m1=wbar_m1,wbar_m2=wbar_m2,wbar_m3=wbar_m3,wbar_m4=wbar_m4, wbar_m5=wbar_m5,
+               wbar_m6=wbar_m6,wbar_m7=wbar_m7,wbar_m8=wbar_m8,wbar_m9=wbar_m9,wbar_m10=wbar_m10,
+               wbar_m11=wbar_m11,wbar_m12=wbar_m12,wbar_m13=wbar_m13,wbar_m14=wbar_m14,wbar_m15=wbar_m15,
+               wbar_m16=wbar_m16,wbar_m17=wbar_m17,wbar_m18=wbar_m18,wbar_m19=wbar_m19,wbar_m20=wbar_m20, 
+               
+               Scenario=Scenario)
+      
+      return(out)
+    }
+    
+    xx <- sapply(fe, fn)
+    Stock$equil <- as.data.frame(t(xx))
+    
+    return(Stock)
+  })
 }
 
 # |---------------------------------------------------------------------------|
@@ -467,20 +519,43 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 
 .runModel <- function(df)
 {
-	
-	with(as.list(df), {
-		print(dm)
-		M1 <- .calcLifeTable(Stock)
-		M1 <- .calcSelectivities(M1,slim=slim,ulim=1500,cvlm=0.1,dm=dm)
-		M1 <- .calcSRR(M1)
-		M1 <- .asem(fe,M1,bycatch)
-
-		out <- c(fe=fe,slim=slim,dm=dm,bycatch=bycatch,
-		         Ye=M1$ye,De=M1$de,Be=M1$be,Re=M1$re,
-		         SPR=M1$spr,YPR=M1$ypr,DPR=M1$dpr,BPR=M1$bpr,
-		         Cbar=M1$cbar )
-		return(out)
-	})
+  
+  with(as.list(df), {
+    print(dm)
+    M1 <- .calcLifeTable(Stock) # list of 
+    M1 <- .calcSelectivities(M1,slim=slim,ulim=1500,cvlm=0.1,dm=dm)
+    M1 <- .calcSRR(M1) #spawnerperrecruit relationship
+    M1 <- .asem(fe,M1,bycatch) #age-structures eqB model
+    
+    out <- c(fe=fe,slim=slim,dm=dm,bycatch=bycatch,
+             Ye=M1$ye,De=M1$de,We=M1$we,Be=M1$be,Re=M1$re,
+             SPR=M1$spr,YPR=M1$ypr,DPR=M1$dpr,WPR=M1$wpr,BPR=M1$bpr,
+             Cbar=M1$cbar,EE=M1$ye/(M1$ye+M1$de),Fd = M1$fd,
+             YEv=M1$yev,DEv=M1$dev,BYv=M1$byv,
+             
+             wbar_f1=M1$wbar[1,1],wbar_m1=M1$wbar[2,1],
+             wbar_f2=M1$wbar[1,2],wbar_m2=M1$wbar[2,2],
+             wbar_f3=M1$wbar[1,3],wbar_m3=M1$wbar[2,3],
+             wbar_f4=M1$wbar[1,4],wbar_m4=M1$wbar[2,4],
+             wbar_f5=M1$wbar[1,5],wbar_m5=M1$wbar[2,5],
+             wbar_f6=M1$wbar[1,6],wbar_m6=M1$wbar[2,6],
+             wbar_f7=M1$wbar[1,7],wbar_m7=M1$wbar[2,7],
+             wbar_f8=M1$wbar[1,8],wbar_m8=M1$wbar[2,8],
+             wbar_f9=M1$wbar[1,9],wbar_m9=M1$wbar[2,9],
+             wbar_f10=M1$wbar[1,10],wbar_m10=M1$wbar[2,10],
+             wbar_f11=M1$wbar[1,11],wbar_m11=M1$wbar[2,11],
+             wbar_f12=M1$wbar[1,12],wbar_m12=M1$wbar[2,12],
+             wbar_f13=M1$wbar[1,13],wbar_m13=M1$wbar[2,13],
+             wbar_f14=M1$wbar[1,14],wbar_m14=M1$wbar[2,14],
+             wbar_f15=M1$wbar[1,15],wbar_m15=M1$wbar[2,15],
+             wbar_f16=M1$wbar[1,16],wbar_m16=M1$wbar[2,16],
+             wbar_f17=M1$wbar[1,17],wbar_m17=M1$wbar[2,17],
+             wbar_f18=M1$wbar[1,18],wbar_m18=M1$wbar[2,18],
+             wbar_f19=M1$wbar[1,19],wbar_m19=M1$wbar[2,19],
+             wbar_f20=M1$wbar[1,20],wbar_m20=M1$wbar[2,20]) #females=sex1, males=sex2
+    
+    return(out)
+  })
 }
 
 
