@@ -558,20 +558,56 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
   })
 }
 
-
-# |---------------------------------------------------------------------------|
-# | Main function calls.                                                      |
-# |---------------------------------------------------------------------------|
-# | df is a data frame with the output of the equilibrium model.
-# | 
+	# |---------------------------------------------------------------------------|
+	# | Main function calls.                                                      |
+	# |---------------------------------------------------------------------------|
+	# | df is a data frame with the output of the equilibrium model, 
+	# /  includes all permutations of the variables below
+	# | 
 	df <- expand.grid(fe=fe,slim=sizelimit,dm=discardmortality,bycatch=bycatch)
-
-	if(!exists("S1"))
+	
+	#	if(!exists("S1")) ## so it doesn't rerun all models just to update graphs
 	S1 <- as.data.frame(t(apply(df,1,.runModel)))
-
+	
+	# require("parallel")
+	# cl <- makeCluster(getOption("cl.cores", 4))
+	# # parApply(cl = NULL, X, MARGIN, FUN, ...)
+	# S2 <- as.data.frame(t(parApply(cl,df,1,.runModel)))
+	sl.fspr <- ddply(S1,.(slim,dm,bycatch),plyr::summarize,
+	                 fspr = fe[max(which(SPR>=0.3))])
+	
+	
+	sl.fmsy <- ddply(S1,.(slim,dm,bycatch),plyr::summarize,
+	                 fmsy=fe[which.max(Ye)],
+	                 Fd = round(Fd[which.max(Ye)],2),
+	                 bmsy=round(Be[which.max(Ye)],1),
+	                 spr =round(SPR[which.max(Ye)],3),
+	                 msy=round(max(Ye),1),
+	                 cbar=round(Cbar[which.max(Ye)],1) )
+	
+	t2<-subset(subset(sl.fmsy,slim%in%c(66.04,81.28)),bycatch%in%c(10,20))
+	require("Hmisc")
+	#	latex(t2,rowname=NULL)
+	
+	#Economic losses
+	econ <- ddply(S1,.(slim,dm,bycatch),plyr::summarize,
+	              fe =   fe[which.max(YEv)],
+	              sl = slim[which.max(YEv)],
+	              YEv = YEv[which.max(YEv)],
+	              DEv = DEv[which.max(YEv)],
+	              BYv = BYv[which.max(YEv)])
+	
+	sdf <- subset(S1,slim==81.28)
+	t3<-ddply(sdf,.(bycatch,dm),plyr::summarize,
+	          msy  =round(Ye[which.max(Ye)],1),
+	          fmsy =round(fe[which.max(Ye)],2),
+	          Value=round(YEv[which.max(Ye)],1),
+	          DEv  =round(DEv[which.max(Ye)],1),
+	          BYv  =round(BYv[which.max(Ye)],1))
+	#	latex(t3,rowname=NULL)
 	
 # |---------------------------------------------------------------------------|
-# | GRAPHICS.                                                      |
+# | MORE GRAPHICS.                                                     |
 # |---------------------------------------------------------------------------|
 # | p1 -> equilibrium yield
 # | p2 -> equilibrium wastage
