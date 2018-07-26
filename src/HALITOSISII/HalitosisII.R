@@ -78,32 +78,36 @@ Stock <- c(Stock,list(a=a,b=b,cm=cm))
 
 
 # |---------------------------------------------------------------------------|
-# | Commercial selectivities from Stewart 2012.                               
+# | Commercial selectivities from Stewart 2012 (old from Hare's model).
+# | This has been updated in the modern stock assessments.
 # |---------------------------------------------------------------------------|
-   bin   <- seq(60, 130, by=10)
-   CSelL <- matrix(
-   (data=c(0,  0.0252252,  0.250685,  0.617268,  1,  1.36809,  1.74292,  2.12022, 
-   		0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)
-   ), nrow=8, ncol=2)
-   
+bin   <- seq(60, 130, by=10) #60 to 130 cm by 10 cm intervals
+CSelL <- matrix(
+  (data=c(0,  0.0252252,  0.250685,  0.617268,  1,  1.36809,  1.74292,  2.12022, 
+          0,  0.0151914,  0.144236,  0.513552,  1,  1.48663,  1.97208,  2.45702)
+  ), nrow=8, ncol=2) #in order from 60 to 130 cm by 10 cm intervals, females first then males
 
-   # THis is from the survey selectivity
-   SSelL <- matrix(
-	data=c(0,  0.285875,  0.579811,  0.822709,  1,  1.13862,  1.29717,  1.46621, 
-		0,  0.246216,  0.454654,  0.68445,  1,  1.29683,  1.58379,  1.86742)
-	, nrow=8, ncol=2)
-	
-   #CSelL <- t(t(CSelL)/apply(CSelL,2,max))
-   CSelL <- t(t(SSelL)/apply(SSelL,2,max))
-   #CSelL <- CSelL/max(CSelL)
-   #CSelL <- SSelL/max(SSelL)
-   slim	<- 81.28
-   ulim	<- 1500
-   cvlm	<- 0.1
 
-   sizelimit <- 2.54 * c(seq(20,65,by=5))
-   discardmortality <- c(0.15,0.30,0.60,0.90)
-   bycatch  <- c(0,10,20)
+# THis is from the survey selectivity
+SSelL <- matrix(
+  data=c(0,  0.285875,  0.579811,  0.822709,  1,  1.13862,  1.29717,  1.46621, 
+         0,  0.246216,  0.454654,  0.68445,  1,  1.29683,  1.58379,  1.86742)
+  , nrow=8, ncol=2)
+
+#CSelL <- t(t(CSelL)/apply(CSelL,2,max))
+CSelL <- t(t(SSelL)/apply(SSelL,2,max))
+#CSelL <- CSelL/max(CSelL)
+#CSelL <- SSelL/max(SSelL)
+slim	<- 81.28
+ulim	<- 1500
+cvlm	<- 0.1
+
+fe  <- seq(0, 1.00, by=0.01)#sequence of fishing mortality rates.
+sizelimit <- 81.28 # 2.54 * c(seq(20,65,by=2))
+discardmortality <- 0.16 #c(0.10, 0.15, 0.20, 0.25)
+bycatch  <- 0 #c(0,10,20)
+
+bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # |---------------------------------------------------------------------------|
 
 
