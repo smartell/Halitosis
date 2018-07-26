@@ -39,38 +39,43 @@ mytheme <- function (base_size = 12, base_family = "")
 # | Data and other constants
 # |---------------------------------------------------------------------------|
 # | Stock -> is a list object with all parameters and output.
-   regArea <- "2B"
-   A	<- 35					# maximum age.
-   G	<- 11					# number of growth groups
-   S	<- 2					# number of sexes
-   dim	<- c(A, G, S)			# array dimensions
-   age	<- 1:A					# vector of ages
-   pg	<- dnorm(seq(-1.96, 1.96, length=G), 0, 1); 
-   pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
-   fe  <- seq(0, 2.0, length=51)#sequence of fishing mortality rates.
-   Stock <- list(A=A,G=G,S=S,dim=dim,age=age,pg=pg)
+regArea <- "2B"
+A	<- 30					# maximum age.
+G	<- 11					# number of growth groups
+S	<- 2					# number of sexes
+dim	<- c(A, G, S)			# array dimensions
+age	<- 1:A					# vector of ages
+pg	<- dnorm(seq(-1.96, 1.96, length=G), 0, 1); #probability of being a group or the
+pg  <- pg/sum(pg) 			# proportion assigned to each growth-type group.
+
+Stock <- list(A=A,G=G,S=S,dim=dim,age=age,pg=pg)
 
 
 # |---------------------------------------------------------------------------|
 # | Population parameters 
 # |---------------------------------------------------------------------------|
-   bo		<- 300.0			# unfished female spawning biomass
-   h		<- 0.75				# steepness
-   m        <- c(0.15,0.14)     # natural mortality rate
-   linf     <- c(165,107)		# asymptotic length
-   vonk     <- c(0.075,0.068)	# vonk
-   to       <- c(-4.62,-7.45)   # time at zero length
-   p        <- c(1.49,0.98)     # vonb Power parameter.
-   cv       <- c(0.1,0.1)		# CV in length-at-age.
-   a50      <- rep(10.91,2)     # age at 50% maturity.
-   k50      <- rep(1.406,2)     # std at 50% maturity.
-	a		<- rep(6.821e-6, 2) # length-weight allometry (Clark 1992)
-	b		<- rep(3.24, 2)		# length-weight allometry (CLark 1992)
+bo		<- 476.891			# unfished female spawning biomass from Stewart 2012
+#    r0   <- 1
+#    phiE <-
+#    b0   <- r0/phiE
+h		<- 0.75				# steepness
+m        <- c(0.201826,0.169674) # natural mortality rate
+linf     <- c(313,172)		# asymptotic length
+vonk     <- c(0.042,0.066)	# vonk
+to       <- c(-2.6e-8,-0.92)   # time at zero length
+p        <- c(1,1)  # vonb Power parameter.
+cv       <- c(0.14,0.14)		# CV in length-at-age
 
-   # dm		<- 0.16				# discard mortality rate
-   cm		<- 0				# Size-dependent natural mortality rate (-0.5, 0.5)
-   Stock <- c(Stock,list(bo=bo,h=h,m=m,linf=linf,vonk=vonk,to=to,p=p,cv=cv,a50=a50,k50=k50))
-   Stock <- c(Stock,list(a=a,b=b,cm=cm))
+a50      <- c(12.8,10.6)     # age at 50% maturity. ## 11.6 yrs (Stewart 2014) 
+k50      <- c(0.72,0.53)     # the scale or slope parameter 50% maturity. 
+a				<- rep(3.139e-6, 2) # length-weight allometry (Clark 1992)
+b				<- rep(3.24, 2)		# length-weight allometry (CLark 1992)
+
+# dm		<- 0.16				# discard mortality rate
+cm		<- 0				# Size-dependent natural mortality rate (-0.5, 0.5)
+Stock <- c(Stock,list(bo=bo,h=h,m=m,linf=linf,vonk=vonk,to=to,p=p,cv=cv,a50=a50,k50=k50))
+Stock <- c(Stock,list(a=a,b=b,cm=cm))
+
 
 # |---------------------------------------------------------------------------|
 # | Commercial selectivities from Stewart 2012.                               
