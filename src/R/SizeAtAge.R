@@ -1,5 +1,9 @@
 `# R-script for looking at the size at age data.
+
 # Thanks to Aaron Ranta for providing the data.
+
+
+setwd("/Users/Jane/Documents/GitHub/Halitosis/src/R/")
 require(ggplot2)
 require(reshape2)
 hal.data       <- read.table(file="HalLenAge1998-2011bySex.txt", header=TRUE, na.strings="NULL")
