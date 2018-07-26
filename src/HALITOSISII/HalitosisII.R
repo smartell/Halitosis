@@ -1,23 +1,39 @@
 
 
+####################################
+### Size-selective fishing model ###
+### a.k.a "HALITOSIS II"         ###
+### written by Steve Martell     ###
+####################################
+.RES = 300 #png file resolution
 
+setwd("C:/Users/Jane/Dropbox/Halitosis")
 
-
-# https://github.com/smartell/Halitosis.git
-
-
-
-  setwd("/Users/Jane/Documents/GitHub/Halitosis/src/HALITOSISII/")
 # |---------------------------------------------------------------------------|
-# | Libraries
+# | Dependencies
 # |---------------------------------------------------------------------------| 
-   require(Hmisc)
-   require(ggplot2)
-   require(reshape2)
-   require(Riscam)
-   require(grid)            #arrow function
+if(!require("Hmisc"))   install.packages("Hmisc")  ## latex
+if(!require("ggplot2"))   install.packages("ggplot2")
+if(!require("reshape2"))   install.packages("reshape2")
+if(!require("grid"))   install.packages("grid") ## arrow function
+if(!require("plyr"))   install.packages("plyr")
 
-   source("Selex.R")
+source("Selex.R")
+
+mytheme <- function (base_size = 12, base_family = "") 
+{
+  theme_grey(base_size = base_size, base_family = base_family) %+replace% 
+    theme(axis.text = element_text(size = rel(0.8)), 
+          axis.ticks = element_line(colour = "black"), 
+          legend.key = element_rect(colour = "grey80"), 
+          panel.background = element_rect(fill = "white", colour = NA), 
+          panel.border = element_rect(fill = NA, colour = "grey50"), 
+          panel.grid.major = element_line(colour = "grey90", size = 0.2), 
+          panel.grid.minor = element_line(colour = "grey98", size = 0.5), 
+          strip.background = element_rect(fill = "grey80", colour = "grey50"), 
+          strip.background = element_rect(fill = "grey80", colour = "grey50"),
+          legend.position = 'bottom')
+}
 
 # |---------------------------------------------------------------------------|
 # | Data and other constants
