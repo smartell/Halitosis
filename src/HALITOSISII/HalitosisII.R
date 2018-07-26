@@ -7,8 +7,6 @@
 ####################################
 .RES = 300 #png file resolution
 
-setwd("C:/Users/Jane/Dropbox/Halitosis")
-
 # |---------------------------------------------------------------------------|
 # | Dependencies
 # |---------------------------------------------------------------------------| 
@@ -17,24 +15,24 @@ if(!require("ggplot2"))   install.packages("ggplot2")
 if(!require("reshape2"))   install.packages("reshape2")
 if(!require("grid"))   install.packages("grid") ## arrow function
 if(!require("plyr"))   install.packages("plyr")
+if(!require("extrafont"))   install.packages("extrafont")
 
-source("Selex.R")
+source("src/HALITOSISII/Selex.R")
 
-mytheme <- function (base_size = 12, base_family = "") 
-{
-  theme_grey(base_size = base_size, base_family = base_family) %+replace% 
-    theme(axis.text = element_text(size = rel(0.8)), 
-          axis.ticks = element_line(colour = "black"), 
-          legend.key = element_rect(colour = "grey80"), 
-          panel.background = element_rect(fill = "white", colour = NA), 
-          panel.border = element_rect(fill = NA, colour = "grey50"), 
-          panel.grid.major = element_line(colour = "grey90", size = 0.2), 
-          panel.grid.minor = element_line(colour = "grey98", size = 0.5), 
-          strip.background = element_rect(fill = "grey80", colour = "grey50"), 
-          strip.background = element_rect(fill = "grey80", colour = "grey50"),
-          legend.position = 'bottom')
-}
-
+mytheme <- theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.key = element_blank(),
+        panel.border = element_blank(),
+        axis.text=element_text(family="serif",size=12),
+        axis.title=element_text(family="serif",size=12),
+        legend.text=element_text(size=12,family="serif"),
+        legend.title=element_text(size=12,family="serif"),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        strip.background = element_blank(),
+        legend.position="top")
 # |---------------------------------------------------------------------------|
 # | Data and other constants
 # |---------------------------------------------------------------------------|
@@ -606,8 +604,182 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 	          BYv  =round(BYv[which.max(Ye)],1))
 	#	latex(t3,rowname=NULL)
 	
+	
+	# |---------------------------------------------------------------------------|
+	# | GRAPHICS - CHANGES TO SIZE-AT_AGE                                         |
+	# |---------------------------------------------------------------------------|
+	
+	colnames(S1)
+	cols <- c("fe", "wbar_f1",  "wbar_m1",  "wbar_f2",  "wbar_m2",
+	          "wbar_f3",  "wbar_m3",  "wbar_f4",  "wbar_m4",  "wbar_f5",  "wbar_m5", 
+	          "wbar_f6",  "wbar_m6",  "wbar_f7",  "wbar_m7",  "wbar_f8",  "wbar_m8", 
+	          "wbar_f9",  "wbar_m9",  "wbar_f10", "wbar_m10", "wbar_f11", "wbar_m11",
+	          "wbar_f12", "wbar_m12", "wbar_f13", "wbar_m13", "wbar_f14", "wbar_m14",
+	          "wbar_f15", "wbar_m15", "wbar_f16", "wbar_m16", "wbar_f17", "wbar_m17",
+	          "wbar_f18", "wbar_m18", "wbar_f19", "wbar_m19", "wbar_f20", "wbar_m20")
+	dff <- S1[,cols]
+	colnames(dff)
+
+	sexone <- c(rep("F",101),rep("M",101))
+	sextwo <- rep(sexone,20)
+	
+	melted <- melt(dff, id="fe" )
+	melted$sex <- sextwo
+	
+	ageone <- c(rep(1,202),
+	            rep(2,202),
+	            rep(3,202),
+	            rep(4,202),
+	            rep(5,202),
+	            rep(6,202),
+	            rep(7,202),
+	            rep(8,202),
+	            rep(9,202),
+	            rep(10,202),
+	            rep(11,202),
+	            rep(12,202),
+	            rep(13,202),
+	            rep(14,202),
+	            rep(15,202),
+	            rep(16,202),
+	            rep(17,202),
+	            rep(18,202),
+	            rep(19,202),
+	            rep(20,202))
+	melted$age <- ageone
+	
+	melted$waa <- melted$value
+	
+	cols <- c("fe","sex","age","waa")
+	dff <- melted[,cols]
+	
+	head(dff,101)
+	# ff <- c("0.00","0.10","0.20","0.30","0.40","0.50",
+	#         "0.60","0.70","0.80","0.90","1.00")
+	
+	ff <- c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)
+	
+	# melt(dfftry,id_vars="fe")
+	
+	
+# Summaries of observed survey weight-at-age (2014 to 1980s - 1980s data was pretty spotty, so I combined it all.)
+	dat <- read.csv("src/HALITOSISII/WAA14vs80.csv")
+	dat <- subset(dat, reg=="Full")
+	
+	cols <- c("age","weight","sex","year")
+	dat <- dat[,cols]
+	dat$fe <- rep(0.5,69)
+	
+	levels(dat$sex) <- c("Females","Males")
+	colnames(dat) <- c("age","waa","sex","year","fe")
+	dat14 <- subset(dat, year=="2014")
+	dat80 <- subset(dat, year=="1980s")
+	datall <- rbind(dat14,dat80)
+	datall <- na.omit(datall)
+	levels(dfftry$sex) <- c("Females","Males")
+
+	# BASE PLOT
+
+	tiff("src/HALITOSISII/figs/cw_weightraj_nc.tiff", height = 4, family="serif", pointsize=12,width = 7, units = 'in', res=300) #, compression="lzw"
+	
+	p <- ggplot(dfftry, aes(x=age,y=waa,size=as.factor(fe))) +
+	  geom_line(colour="black") + 
+	  facet_wrap(~sex, scales="free") +
+	  scale_size_manual(values=c(0,0.2,0.3,0.4,0.6,0.8,0.9,1,1.2,1.4,1.8)) + #, guide=FALSE)
+	  
+	  # Adding observational data
+	  # guides(size = guide_legend(override.aes = list(colour="black"))) +
+	  # geom_point(data=datall,aes(x=age,y=waa, colour= year),size=2) +
+	  # facet_wrap(~sex, scales="free") +
+	  # geom_smooth(data=datall,aes(x=age,y=waa, colour= year),
+	  #                    se=FALSE)
+	  
+	  mytheme +
+	  labs(x = "\n Age", y = "Weight (kg) \n", size = 'Fishing \n mortality') +
+	  guides(fill=guide_legend(nrow=2,byrow=TRUE))
+	
+	print(p)
+	
+	dev.off()
+
+
+	# Trajectories with observations 
+
+	tiff("src/HALITOSISII/figs/cw_weightrajwithobs_bw.tiff", height = 4, family="serif", pointsize=12,width = 7, units = 'in', res=300, compression="lzw")
+	
+	p <- p + geom_line(colour="darkgrey") +
+	  geom_point(data=datall,aes(x=age,y=waa, shape= year),colour="black",size=2) +
+	  # geom_smooth(data=datall,aes(x=age,y=waa, shape= year),colour="black",
+	  #                      se=FALSE,size=0.8) +
+	  guides(size = guide_legend(override.aes = list(colour="darkgrey"))) +
+	  scale_linetype_discrete("Year") +
+	  scale_shape_discrete("Year")
+	
+	print(p)
+	
+	dev.off()
+	
+	# Trajectories with observations + best guess of historical F
+	
+	dffreal <- subset(dfftry, fe=="0.4")
+	
+	tiff("src/HALITOSISII/figs/cw_obs_histF_bw.tiff", height = 4, family="serif", pointsize=12,width = 7, units = 'in', res=300, compression="lzw")
+	
+	p <- p + geom_line(data=dffreal, aes(x=age,y=waa),#,linetype=as.factor(fe)),
+	                   linetype=2, colour = "black", size = 1.25) + 
+	  guides(linetype = guide_legend(override.aes = list(linetype = 2))) +
+	  labs(linetype = 'Historical F') 
+	
+	print(p)
+	
+	dev.off()
+	
+	# Base R plot - changes in weight-at-age - never used this one in the manuscript.
+	
+	cols <- c("fe",  "wbar_f5",  "wbar_m5", 
+	          "wbar_f10", "wbar_m10", 
+	          "wbar_f15", "wbar_m15", 
+	          "wbar_f20", "wbar_m20")
+	dff <- S1[,cols]
+	
+	par(mfrow=c(1,2))
+	with(dff, plot(fe, wbar_f20, 'l', col=2, lwd=2, ylim=c(0,max(wbar_f20)),# ylim=c(0,150),
+	               main="Females",
+	               ylab="Weight (lb)",
+	               xlab="Fishing intensity", yaxt="n"))
+	axis(2, at=seq(0,150,20))
+	with(dff, lines(fe, wbar_f15, 'l', col=3, lwd=2))
+	with(dff, lines(fe, wbar_f10, 'l', col=4, lwd=2))
+	with(dff, lines(fe, wbar_f5, 'l', col=5, lwd=2))
+	abline(v=0.34, lty=2)
+	abline(h=43.4, lty=2, col=2)
+	abline(h=23.7, lty=2, col=3)
+	abline(h=11.0, lty=2, col=4)
+	abline(h=4.5, lty=2, col=5)
+	grid()
+	legend("topright", legend=c("age-20","age-15","age-10","age-5"),
+	       col=c(2,3,4,5), lwd=c(2,2,2,2))
+	
+	with(dff, plot(fe, wbar_m20, 'l', col=2, lwd=2,ylim=c(0,max(wbar_m20)),#ylim=c(0,100),
+	               main="Males",
+	               ylab="Weight (lb)",
+	               xlab="Fishing intensity",yaxt="n"))
+	axis(2, at=seq(0,100,20))
+	with(dff, lines(fe, wbar_m15, 'l', col=3, lwd=2))
+	with(dff, lines(fe, wbar_m10, 'l', col=4, lwd=2))
+	with(dff, lines(fe, wbar_m5, 'l', col=5, lwd=2))
+	grid()
+	abline(v=0.34, lty=2)
+	abline(h=15.5, lty=2, col=2)
+	abline(h=11.2, lty=2, col=3)
+	abline(h=7.1, lty=2, col=4)
+	abline(h=4.2, lty=2, col=5)
+	legend("topright", legend=c("age-20","age-15","age-10","age-5"),
+	       col=c(2,3,4,5), lwd=c(2,2,2,2))
+	
+	
 # |---------------------------------------------------------------------------|
-# | MORE GRAPHICS.                                                     |
+# | MORE GRAPHICS. - for LWS 2015 paper                                       |
 # |---------------------------------------------------------------------------|
 # | p1 -> equilibrium yield
 # | p2 -> equilibrium wastage
