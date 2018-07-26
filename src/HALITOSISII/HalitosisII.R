@@ -116,61 +116,69 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # |---------------------------------------------------------------------------|
 .calcLifeTable <- function( Stock ) 
 {
-
-	gvonb <- function(t, linf, vbk, to, p=1)
-	{
-		l <- linf*(1.0-exp(-vbk*(t - to)))^p
-		
-		return(l)
-	}
-
-	with(Stock, {
-		lx	   <- array(1, dim)
-		la	   <- array(0, dim)
-		sd_la  <- array(0, dim)
-		wa	   <- array(0, dim)
-		fa	   <- array(0, dim)
-		M      <- array(0, dim)
-		ma     <- plogis(age, a50, k50)
-
-		for(i in 1:S)
-		{
-			# Lenght-at-age
-			mu    <- gvonb(age,linf[i],vonk[i],to[i],p[i])
-			sigma <- cv[i] * mu
-			dev   <- seq(-1.96, 1.96, length=G)
-			if(G==1) dev <- 0
-
-			la[,,i]    <- sapply(dev,fn<-function(dev){la=mu+dev*sigma})
-			sd_la[,,i] <- sqrt(1/G*(cv[i]*mu)^2)
-			wa[,,i]    <- a[i]*la[,,i]^b[i]
-			fa[,,i]    <- ma*wa[,,i]
-
-			# Size dependent natural mortality rate 
-			# M_l = M (l_a/l_r)^c
-			l_r     <- 100
-			delta   <- (la[,,i]/l_r)^cm / mean((la[,,i]/l_r)^cm)
-			M[,,i]  <- m[i] * delta
-			
-			# Survivorship
-			for(j in 2:A)
-			{
-				lx[j,,i] <- lx[j-1,,i]*exp(-M[j-1,,i])
-			}
-			lx[A,,i] <- lx[A,,i]/(1-exp(-M[A,,i]))
-		}
-
-		Stock$lx	   = lx	
-		Stock$la	   = la	
-		Stock$sd_la    = sd_la
-		Stock$wa	   = wa	
-		Stock$fa	   = fa	
-		Stock$M        = M
-		Stock$ma       = ma
-
-		return(Stock)
-	})
-
+  
+  gvonb <- function(t, linf, vbk, to, p=1)
+  {
+    l <- linf*(1.0-exp(-vbk*(t - to)))^p
+    
+    return(l)
+  }
+  
+  with(Stock, {  #Stock is a function
+    lx	   <- array(1, dim)
+    la	   <- array(0, dim)
+    sd_la  <- array(0, dim)
+    wa	   <- array(0, dim)
+    fa	   <- array(0, dim)
+    pa     <- array(0, dim)
+    M      <- array(0, dim)
+    ma     <- plogis(age, a50, k50) #maturity is a function of age, not length
+    
+    for(i in 1:S) # S = sexes
+    {
+      # Lenght-at-age
+      mu    <- gvonb(age,linf[i],vonk[i],to[i],p[i])
+      sigma <- cv[i] * mu #standard deviation
+      dev   <- seq(-1.96, 1.96, length=G) #deviance, standard normal deviation
+      if(G==1) dev <- 0
+      
+      la[,,i]    <- sapply(dev,fn<-function(dev){la=mu+dev*sigma}) #la = mean length-at-age
+      sd_la[,,i] <- sqrt(1/G*(cv[i]*mu)^2)
+      wa[,,i]    <- a[i]*la[,,i]^b[i] #weight at age
+      fa[,,i]    <- ma*wa[,,i] #fecundity at age
+      
+      # Size dependent natural mortality rate 
+      # M_l = M (l_a/l_r)^c 
+      l_r     <- 100 # reference length
+      delta   <- (la[,,i]/l_r)^cm / mean((la[,,i]/l_r)^cm)
+      M[,,i]  <- m[i] * delta
+      
+      # Survivorship
+      for(j in 2:A)
+      {
+        lx[j,,i] <- lx[j-1,,i]*exp(-M[j-1,,i]) #unfished
+      }
+      lx[A,,i] <- lx[A,,i]/(1-exp(-M[A,,i])) #plus groups
+    }
+    
+    # price premiums based on fish weight
+    pa[wa<10]  <- 0.00
+    pa[wa>=10] <- 6.75
+    pa[wa>=20] <- 7.30
+    pa[wa>=40] <- 7.50
+    
+    Stock$lx	   = lx	#unfished surv.
+    Stock$la	   = la	
+    Stock$sd_la    = sd_la
+    Stock$wa	   = wa
+    Stock$pa       = pa
+    Stock$fa	   = fa	
+    Stock$M        = M #natural mortality (independent of age and size)
+    Stock$ma       = ma #maturity at age
+    
+    return(Stock)
+  })
+  
 }
 
 
