@@ -186,50 +186,56 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # | Calculate size-based selectivities and joint capture probability
 # |---------------------------------------------------------------------------|
 # | This function calls .calcPage(la, sa, pl, xl) in Selex.R
-.calcSelectivities <- function(Stock,slim=0,ulim=1500,cvlm=0.1,dm=0)
+.calcSelectivities <- function(Stock,slim=0,ulim=1500,cvlm=0.1,dm=0) #slim=lowersizelimit
+  #ulim=upper size limit, cvlm= variability within saa within 
+  #gtg plus measurement error or measuring indv fish, dm=discard mort
 {
-	# TODO Fix selectivities such that va is roughly the same with G=1 or G=11 groups.
-	# Calculate capture probabilities
-	with(Stock, {
-		# Length-interval midpoints for integration
-		xl  <- seq(5,200,by=2.5)
-		
-		# Length-based selectivity (length-based -> age-based)
-		sc	<- array(0, dim)  #size capture
-		sr	<- array(0, dim)  #size retention
-		sd	<- array(0, dim)  #size discard
-		va	<- array(0, dim)  #retained
-		vd	<- array(0, dim)  #discard fishery
-		std	<- cvlm*slim+1.e-30	
-		for(i in 1:S)
-		{
-			pl       <- approx(bin, CSelL[,i], xl, yright=1, yleft=0)$y
-			sc[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pl,xl)
-			#sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)$y
-			
-			# retention proability
-			pr       <-  plogis(xl, slim, 0.1) - plogis(xl, ulim, 0.1)
-			sr[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pr,xl)
-			
-			#sr[,,i]  <-  plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
-			sd[,,i]  <- 1-sr[,,i]
-			va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm)
-			
-			# discard fishery selecitvity
-			pd       <- plogis(xl, 66,  0.1) - plogis(xl, 81.3, 0.1)
-			vd[,,i]  <- .calcPage(la[,,i],sd_la[,,i], pd, xl)
-		}
-		
-		
-		Stock$sc <- sc	# Length-based commercial selectivity.
-		Stock$sr <- sr	# Age-specific retention probability.
-		Stock$sd <- sd	# Age-specific discard probability.
-		Stock$va <- va	# Joint capture probability.
-		Stock$vd <- vd	# Discard probability in trawl fishery.
-		Stock$dm <- dm  # Discard mortality rate
-		
-		return(Stock)
-	})
+  # TODO Fix selectivities such that va is roughly the same with G=1 or G=11 groups.
+  # Calculate capture probabilities
+  with(Stock, {
+    # Length-interval midpoints for integration
+    xl  <- seq(5,200,by=2.5)
+    
+    # Length-based selectivity (length-based -> age-based)
+    sc	<- array(0, dim)  #size capture
+    sr	<- array(0, dim)  #size retention
+    sd	<- array(0, dim)  #size discard
+    va	<- array(0, dim)  #retained
+    vd	<- array(0, dim)  #bycatch fishery
+    std	<- cvlm*slim+1.e-30	
+    for(i in 1:S)
+    {
+      #probt of catching a fish of a given length:
+      pl       <- approx(bin, CSelL[,i], xl, yright=1, yleft=0)$y  # selectivity curve, length-based 
+      sc[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pl,xl) #sc = size of capture # selex.R
+      #sc[,,i]  <- approx(bin, CSelL[,i], la[,,i], yleft=0, yright=1)$y
+      
+      # retention proability 
+      pr       <-  plogis(xl, slim, 0.1) - plogis(xl, ulim, 0.1) 
+      sr[,,i]  <- .calcPage(la[,,i],sd_la[,,i],pr,xl) #calculates the proportion of indiv at age that are vulnerable
+      
+      #probabity of discarding it..
+      #sr[,,i]  <-  plogis(la[,,i],location=slim, scale=std) - plogis(la[,,i],location=ulim, scale=std)
+      sd[,,i]  <- 1-sr[,,i]
+      va[,,i]  <- sc[,,i]*(sr[,,i]+sd[,,i]*dm) 
+      
+      # bycatch fishery selecitvity... made up
+      pd       <- plogis(xl, 40,  5) - (1-0.65)*plogis(xl, 100.3, 5.0) #subtracting these makes it dome-shaped.
+      vd[,,i]  <- .calcPage(la[,,i],sd_la[,,i], pd, xl)
+      
+      
+    }
+    
+    
+    Stock$sc <- sc	# Length-based commercial selectivity.
+    Stock$sr <- sr	# Age-specific retention probability.
+    Stock$sd <- sd	# Age-specific discard probability.
+    Stock$va <- va	# Joint capture probability.
+    Stock$vd <- vd	# Discard probability in trawl fishery.
+    Stock$dm <- dm  # Discard mortality rate
+    
+    return(Stock)
+  })
 }
 
 
@@ -239,25 +245,26 @@ bycatchSel <- c(0, 0, 0.379083, 0.923116, 1, 0.748264, rep(0.650509,length=29))
 # |
 .calcSRR <- function(Stock)
 {
-	with(Stock, {
-		# Unfished SPR  (phi.E)
-		phi.E	<- sum(t(t(lx[,,1]*fa[,,1])*pg))
-		
-		# Unfished recruitment (ro)
-		ro		<- bo/phi.E
-		
-		# Beverton-Holt model
-		kap <- 4*h/(1-h)
-
-		# Ricker Model
-		# kap <- (5*h)^(5/4)
-		
-		Stock$phi.E <- phi.E
-		Stock$ro    <- ro
-		Stock$kap   <- kap
-		
-		return(Stock)
-	})
+  with(Stock, {
+    # Unfished eggs per recruit or spawning stock per recruit (phi.E)
+    phi.E	<- sum(t(t(lx[,,1]*fa[,,1])*pg)) #survivorship*fecundity*proportion of recruits that end up in each growth type group
+    #"1" - indicates females, only interested in female spawning stock biomass
+    # t() is transpose
+    # Unfished recruitment (ro)
+    ro		<- bo/phi.E
+    
+    # Beverton-Holt model
+    kap <- 4*h/(1-h) #reck, phil goodyears compensation ratio, h=steepness (fraction of unfished recruit when you reduce spawning stock biomass by 20% of its unfished state)
+    
+    # Ricker Model
+    # kap <- (5*h)^(5/4)
+    
+    Stock$phi.E <- phi.E
+    Stock$ro    <- ro
+    Stock$kap   <- kap
+    
+    return(Stock)
+  })
 }
 
 # |---------------------------------------------------------------------------|
